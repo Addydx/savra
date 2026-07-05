@@ -1,15 +1,9 @@
-//
-//  SavraApp.swift
-//  Savra
-//
-//  Created by Alex Mendez on 04/07/26.
-//
-
 import SwiftUI
+import SwiftData
 
 @main
 struct SavraApp: App {
-    private let container = AppContainer.foundation
+    @State private var container: AppContainer?
 
     init() {
         FirebaseBootstrap.configureIfNeeded()
@@ -17,7 +11,18 @@ struct SavraApp: App {
 
     var body: some Scene {
         WindowGroup {
-            FoundationRootView(container: container)
+            if let container = container {
+                AppRootView(container: container)
+                    .onAppear {
+                        let context = container.persistence.context
+                        FoodCatalogSeeder.seedIfNeeded(in: context)
+                    }
+            } else {
+                ProgressView("Iniciando Savra...")
+                    .task {
+                        container = AppContainer()
+                    }
+            }
         }
     }
 }

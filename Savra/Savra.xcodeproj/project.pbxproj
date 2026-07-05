@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AF0000010000000000000001 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = AF0000010000000000000002 /* FirebaseCore */; };
+		AF0000020000000000000001 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AF0000020000000000000002 /* FirebaseAuth */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF0000010000000000000001 /* FirebaseCore in Frameworks */,
+				AF0000020000000000000001 /* FirebaseAuth in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +120,7 @@
 			name = Savra;
 			packageProductDependencies = (
 				AF0000010000000000000002 /* FirebaseCore */,
+				AF0000020000000000000002 /* FirebaseAuth */,
 			);
 			productName = Savra;
 			productReference = 4E48FBE02FF99E2C00841169 /* Savra.app */;
@@ -602,6 +605,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AF0000010000000000000003 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
+		};
+		AF0000020000000000000002 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AF0000010000000000000003 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

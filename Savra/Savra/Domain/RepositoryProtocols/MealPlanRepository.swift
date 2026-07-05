@@ -5,4 +5,5 @@ protocol MealPlanRepository: Sendable {
     func update(_ plan: MealPlan) async throws
     func delete(id: MealPlan.ID) async throws
     func fetchActive(for userId: User.ID) async throws -> [MealPlan]
+    func fetchAll(for userId: User.ID) async throws -> [MealPlan]
 }

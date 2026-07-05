@@ -7,10 +7,13 @@ enum FirebaseBootstrap {
     }
 
     static func configureIfNeeded() {
-        guard !isConfigured else {
+        guard !isConfigured else { return }
+
+        guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+              let options = FirebaseOptions(contentsOfFile: path) else {
             return
         }
 
-        FirebaseApp.configure()
+        FirebaseApp.configure(options: options)
     }
 }
