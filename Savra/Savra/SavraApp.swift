@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct SavraApp: App {
+    private let container = AppContainer.foundation
+
+    init() {
+        FirebaseBootstrap.configureIfNeeded()
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            FoundationRootView(container: container)
         }
     }
 }
