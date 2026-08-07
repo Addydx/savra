@@ -302,6 +302,32 @@ extension SDMealLogPhoto {
 }
 
 @Model
+final class SDUnlockedAchievement {
+    @Attribute(.unique) var id: UUID
+    var userId: String
+    var achievementId: String
+    var unlockedAt: Date
+
+    init(id: UUID = UUID(), userId: String, achievementId: String, unlockedAt: Date = .now) {
+        self.id = id
+        self.userId = userId
+        self.achievementId = achievementId
+        self.unlockedAt = unlockedAt
+    }
+}
+
+extension SDUnlockedAchievement {
+    func toDomain() -> UnlockedAchievement {
+        UnlockedAchievement(
+            id: id,
+            userId: UUID(uuidString: userId) ?? UUID(),
+            achievementId: achievementId,
+            unlockedAt: unlockedAt
+        )
+    }
+}
+
+@Model
 final class SDFoodItem {
     @Attribute(.unique) var id: UUID
     var name: String

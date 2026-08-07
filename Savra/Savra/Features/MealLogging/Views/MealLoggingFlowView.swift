@@ -217,5 +217,12 @@ struct MealLoggingFlowView: View {
                 .controlSize(.large)
         }
         .padding()
+        .overlay {
+            if !viewModel.newlyUnlockedAchievements.isEmpty {
+                AchievementCelebrationView(achievements: viewModel.newlyUnlockedAchievements) {
+                    viewModel.newlyUnlockedAchievements = []
+                }
+            }
+        }
     }
 }

@@ -31,6 +31,7 @@ final class MealLoggingViewModel {
     var isLoading = false
     var isSaved = false
     var errorMessage: String?
+    var newlyUnlockedAchievements: [Achievement] = []
 
     enum Step: String {
         case selectPlan
@@ -178,6 +179,12 @@ final class MealLoggingViewModel {
 
             isSaved = true
             await dashboardVM?.loadToday()
+
+            // Achievement evaluation is a bonus on top of a successful save — a failure here
+            // shouldn't surface as a save error or block the "saved" confirmation.
+            if let unlocked = try? await container.evaluateAchievementsUseCase.evaluate(for: userIdUUID) {
+                newlyUnlockedAchievements = unlocked
+            }
         } catch {
             errorMessage = "Error al guardar: \(error.localizedDescription)"
         }

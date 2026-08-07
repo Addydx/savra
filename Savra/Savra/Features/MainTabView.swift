@@ -20,6 +20,11 @@ struct MainTabView: View {
                     Label("Historial", systemImage: "clock.fill")
                 }
 
+            AchievementsView(container: container)
+                .tabItem {
+                    Label("Logros", systemImage: "trophy.fill")
+                }
+
             ProfileView(container: container)
                 .tabItem {
                     Label("Perfil", systemImage: "person.fill")

@@ -9,7 +9,9 @@ final class AppContainer {
     let mealOccurrenceRepository: SwiftDataMealOccurrenceRepository
     let mealLogRepository: SwiftDataMealLogRepository
     let foodCatalogRepository: LocalFoodCatalogRepository
+    let achievementRepository: SwiftDataAchievementRepository
     let imageService: LocalImageService
+    let evaluateAchievementsUseCase: EvaluateAchievementsUseCase
 
     init() {
         let persistence = PersistenceService.shared
@@ -24,6 +26,13 @@ final class AppContainer {
         self.mealOccurrenceRepository = SwiftDataMealOccurrenceRepository(context: context)
         self.mealLogRepository = SwiftDataMealLogRepository(context: context)
         self.foodCatalogRepository = LocalFoodCatalogRepository(context: context)
+        self.achievementRepository = SwiftDataAchievementRepository(context: context)
         self.imageService = LocalImageService()
+        self.evaluateAchievementsUseCase = EvaluateAchievementsUseCase(
+            mealPlanRepository: mealPlanRepository,
+            mealOccurrenceRepository: mealOccurrenceRepository,
+            mealLogRepository: mealLogRepository,
+            achievementRepository: achievementRepository
+        )
     }
 }

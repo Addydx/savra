@@ -4,6 +4,7 @@ struct DashboardView: View {
     let container: AppViewModel
     @State private var viewModel: DashboardViewModel?
     @State private var heatmapVM: ComplianceHeatmapViewModel?
+    @State private var streakVM: StreakViewModel?
 
     var body: some View {
         NavigationStack {
@@ -28,7 +29,9 @@ struct DashboardView: View {
         .sheet(isPresented: Binding(
             get: { viewModel?.showMealLogger ?? false },
             set: { _ in if let vm = viewModel { vm.didDismissLogger() } }
-        )) {
+        ), onDismiss: {
+            Task { await streakVM?.load() }
+        }) {
             if let vm = viewModel {
                 MealLoggingFlowView(
                     container: container.container,
@@ -45,12 +48,31 @@ struct DashboardView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 header(vm: vm)
+                streakSection
                 todaySection(vm: vm)
                 complianceSection(vm: vm)
             }
             .padding()
         }
-        .refreshable { await vm.loadToday() }
+        .refreshable {
+            await vm.loadToday()
+            await streakVM?.load()
+        }
+    }
+
+    @ViewBuilder
+    private var streakSection: some View {
+        if let streakVM {
+            StreakWidgetView(streak: streakVM.loggingStreak)
+        } else {
+            Color.clear
+                .frame(height: 0)
+                .onAppear {
+                    let vm = StreakViewModel(container: container.container, userId: container.userId)
+                    streakVM = vm
+                    Task { await vm.load() }
+                }
+        }
     }
 
     private func header(vm: DashboardViewModel) -> some View {
