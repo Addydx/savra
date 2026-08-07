@@ -86,7 +86,7 @@ struct FoodSearchView: View {
                     source: .userCreated,
                     ownerUserId: nil
                 )
-                loggingVM.addFood(food)
+                addFood(food)
                 customFoodName = ""
                 showAddCustom = false
             }
@@ -120,8 +120,13 @@ struct FoodSearchView: View {
         Dictionary(grouping: viewModel.allFoods) { $0.category ?? "Otros" }
     }
 
+    private func addFood(_ food: FoodItem) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        loggingVM.addFood(food)
+    }
+
     private func foodChip(_ food: FoodItem) -> some View {
-        Button(action: { loggingVM.addFood(food) }) {
+        Button(action: { addFood(food) }) {
             HStack {
                 Text(food.name)
                     .font(.subheadline)
@@ -161,13 +166,13 @@ struct FoodSearchView: View {
             Spacer()
 
             if loggingVM.selectedFoods.contains(where: { $0.id == food.id }) {
-                Button(action: { loggingVM.removeFood(food) }) {
+                Button(action: { removeFood(food) }) {
                     Image(systemName: "minus.circle.fill")
                         .foregroundColor(.red)
                         .font(.title3)
                 }
             } else {
-                Button(action: { loggingVM.addFood(food) }) {
+                Button(action: { addFood(food) }) {
                     Image(systemName: "plus.circle")
                         .foregroundColor(.accentColor)
                         .font(.title3)
@@ -177,6 +182,11 @@ struct FoodSearchView: View {
         .padding(.vertical, 4)
     }
 
+    private func removeFood(_ food: FoodItem) {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        loggingVM.removeFood(food)
+    }
+
     private var selectedFoodsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -184,7 +194,7 @@ struct FoodSearchView: View {
                     HStack(spacing: 4) {
                         Text(food.name)
                             .font(.caption)
-                        Button(action: { loggingVM.removeFood(food) }) {
+                        Button(action: { removeFood(food) }) {
                             Image(systemName: "xmark")
                                 .font(.caption2)
                         }

@@ -26,6 +26,10 @@ struct MealLoggingFlowView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if !viewModel.isSaved {
+                    stepProgressBar
+                }
+
                 if let error = viewModel.errorMessage {
                     errorBanner(error)
                 }
@@ -46,6 +50,11 @@ struct MealLoggingFlowView: View {
                         }
                     }
                 }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
+                .animation(.easeInOut(duration: 0.25), value: viewModel.step)
             }
             .navigationTitle(titleForStep)
             .navigationBarTitleDisplayMode(.inline)
@@ -57,6 +66,24 @@ struct MealLoggingFlowView: View {
                 }
             }
         }
+    }
+
+    private var stepProgressBar: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 4) {
+                ForEach(MealLoggingViewModel.Step.allCases, id: \.self) { step in
+                    Capsule()
+                        .fill(step.index <= viewModel.step.index ? Color.accentColor : Color(.systemGray5))
+                        .frame(height: 4)
+                }
+            }
+            Text("Paso \(viewModel.step.index) de \(MealLoggingViewModel.totalSteps)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.step)
     }
 
     private func errorBanner(_ message: String) -> some View {
@@ -146,6 +173,7 @@ struct MealLoggingFlowView: View {
                     viewModel.photoItem = nil
                 }
                 .foregroundColor(.red)
+                .frame(minHeight: 44)
             } else {
                 PhotosPicker(
                     selection: Binding(

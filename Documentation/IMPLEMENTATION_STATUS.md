@@ -2,10 +2,16 @@
 
 ## Current Phase
 
-Phase 4 — Visual redesign of `Features/MealLogging/Views/` (next up)
+All 5 phases from `PROMPT-claude-code-meal-logging-streaks.md` are complete.
 
 ## Completed
 
+- **Phase 4 — Visual redesign of `Features/MealLogging/Views/`**:
+  - Added a step progress indicator: `MealLoggingViewModel.Step` gained `index`/`Step.totalSteps`, and `MealLoggingFlowView` renders a 4-segment progress bar + "Paso X de 4" below the nav title, hidden once `isSaved`.
+  - Added transitions between steps: `.transition(.asymmetric(...))` + `.animation` on the step `switch` in `MealLoggingFlowView`.
+  - Added haptics on key actions: `UIImpactFeedbackGenerator(.light)` when adding/removing a food in `FoodSearchView` (chip tap, row tap, custom-food alert), `UINotificationFeedbackGenerator(.success)` after a successful save in `MealLogReviewView` (the achievement-unlock haptic already existed in `AchievementCelebrationView`).
+  - Tap-target pass on the Phase 1 quantity/unit controls: confirmed the unit `Menu` (`minHeight: 44`) and native `Stepper` already meet 44×44pt; added `minHeight: 44` to the "Quitar foto" button, which was undersized.
+  - Verified end-to-end in the iOS Simulator (logged-in session): progress bar advances 1→4, "Continuar sin foto"/"Continuar" label still switches correctly per the Phase 1 fix, food add/remove and save all completed without regressions.
 - **Phase 1.5 — Urgent bug fix: could not log a meal against a plan created the same day**:
   - Root cause: `OccurrenceGenerator.occurrences(for:from:userId:)` compared `plan.recurrenceRule.startDate` (stored with the exact creation time) directly against `date` (always normalized to `calendar.startOfDay(for:)` by callers like `DashboardViewModel.loadToday()`). A plan created any time after midnight failed the `startDate <= date` guard for the day it was created, so no occurrence was generated until the next day, regardless of recurrence kind.
   - Fix: normalized the comparison to day granularity — `calendar.startOfDay(for: plan.recurrenceRule.startDate) <= date`. Checked `SwiftDataMealOccurrenceRepository`/`MealOccurrenceRepository` for the same pattern; their `startDate` is an unrelated ranged-fetch parameter already normalized with `startOfDay`, so no further change was needed there.
@@ -63,7 +69,6 @@ Phase 4 — Visual redesign of `Features/MealLogging/Views/` (next up)
 
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
 - Account deletion strategy, intentionally deferred until the corresponding future phase.
-- **Phase 4** — Visual redesign of `Features/MealLogging/Views/` (step progress indicator, haptics, transitions, contrast/tap-target pass).
 
 ## Manual Actions Required
 
@@ -113,13 +118,18 @@ Phase 4 — Visual redesign of `Features/MealLogging/Views/` (next up)
   - Result: succeeded (Phase 1.5 `OccurrenceGenerator` date-normalization fix).
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, including 4 new `OccurrenceGeneratorTests` cases (late-day plan creation for daily/once/specificDays recurrence, plus a plan starting tomorrow) alongside the existing `StreakCalculatorTests` and `DailyComplianceCalculatorTests` suites (Phase 1.5).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded, no new warnings (Phase 4 visual redesign — progress bar, transitions, haptics, tap targets).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, all 24 existing tests still pass (Phase 4 touched only Views/ViewModel UI concerns, no domain logic changed).
+- Manual verification in the iOS Simulator (logged-in test account): full meal logging flow (select plan → photo → search food → review → save) exercised end-to-end; progress bar advanced "Paso 1 de 4" → "Paso 4 de 4", food add/remove worked with the selected-foods chip bar, save completed and returned to the Dashboard.
 
 ## Last Build Result
 
-Succeeded for simulator build after the Phase 1.5 `OccurrenceGenerator` fix.
+Succeeded for simulator build after the Phase 4 visual redesign.
 
 ## Last Test Result
 
-Succeeded after the Phase 1.5 fix:
+Succeeded after the Phase 4 visual redesign:
 
-- `OccurrenceGeneratorTests` (new), `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests`.
+- `OccurrenceGeneratorTests`, `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests` (24 tests, no regressions).

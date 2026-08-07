@@ -33,12 +33,18 @@ final class MealLoggingViewModel {
     var errorMessage: String?
     var newlyUnlockedAchievements: [Achievement] = []
 
-    enum Step: String {
+    enum Step: String, CaseIterable {
         case selectPlan
         case addPhoto
         case searchFood
         case review
+
+        var index: Int {
+            Self.allCases.firstIndex(of: self)! + 1
+        }
     }
+
+    static let totalSteps = Step.allCases.count
 
     init(container: AppContainer, userId: String, dashboardVM: DashboardViewModel?, preSelectedOccurrence: (plan: MealPlan, occurrence: MealOccurrence)?) {
         self.container = container

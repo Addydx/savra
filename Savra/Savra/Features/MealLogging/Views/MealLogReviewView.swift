@@ -76,7 +76,14 @@ struct MealLogReviewView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
-                Button(action: { Task { await viewModel.saveMealLog() } }) {
+                Button(action: {
+                    Task {
+                        await viewModel.saveMealLog()
+                        if viewModel.isSaved {
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        }
+                    }
+                }) {
                     if viewModel.isLoading {
                         ProgressView()
                             .tint(.white)
