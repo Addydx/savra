@@ -1,6 +1,6 @@
 # Prompt para Claude Code — Registro de comidas, constancia y logros
 
-Pégalo tal cual en Claude Code, dentro del repo (`cd` a la raíz de `savra`). Está dividido en 4 fases; puedes pedirle a Claude Code que las haga todas en un solo run o una por una (recomendado: una por una, con build/test entre cada fase).
+Pégalo tal cual en Claude Code, dentro del repo (`cd` a la raíz de `savra`). Está dividido en 5 fases (1.5 es un bug urgente, resuélvelo antes de seguir); puedes pedirle a Claude Code que las haga todas en un solo run o una por una (recomendado: una por una, con build/test entre cada fase).
 
 ---
 
@@ -36,6 +36,30 @@ Bugs y huecos encontrados en `Features/MealLogging/`:
 5. Revisa que el estado `errorMessage` en `MealLoggingViewModel` realmente se muestre en cada paso del flujo, no solo en `MealLogReviewView` (por ejemplo si falla la carga de imagen).
 
 **Criterio de aceptación**: el flujo completo (seleccionar plan → foto opcional → buscar alimentos con cantidad/unidad → revisar con fecha editable → guardar) funciona sin botones con labels incorrectos, sin llamadas redundantes al repo, y compila sin warnings nuevos.
+
+---
+
+## FASE 1.5 — Bug urgente: no se puede registrar una comida en un plan recién creado
+
+**Causa raíz confirmada**: en `Data/Local/OccurrenceGenerator.swift`, línea 7:
+
+```swift
+guard plan.recurrenceRule.startDate <= date else { return nil }
+```
+
+`date` llega siempre normalizado a inicio de día (`calendar.startOfDay(for: Date())`, ver `DashboardViewModel.loadToday()`), pero `startDate` se guarda con la hora exacta de creación del plan (`MealPlanFormView.swift`, línea 154: `startDate: editPlan?.recurrenceRule.startDate ?? .now`). Si creas un plan a las 16:04, `startDate` = hoy 16:04, y `date` = hoy 00:00 → `16:04 <= 00:00` es falso → no se genera ninguna ocurrencia para hoy, sin importar el tipo de recurrencia (`daily`, `specificDays` u `once`). El plan queda "invisible" para registrar comida el mismo día en que se crea; funciona recién al día siguiente.
+
+**Fix**: normalizar la comparación a nivel de día en `OccurrenceGenerator.occurrences(for:from:userId:)`:
+
+```swift
+guard calendar.startOfDay(for: plan.recurrenceRule.startDate) <= date else { return nil }
+```
+
+(mueve la declaración de `calendar` arriba de este guard si hace falta, ya existe más abajo en la función). Aplica el mismo criterio si hay otra comparación de fechas equivalente en el repo (revisa `MealOccurrenceRepository`/su implementación SwiftData por si replica esta misma lógica).
+
+Después del fix, agrega un test en `SavraTests` que cubra el caso "plan creado hoy con recurrencia diaria/específica/una vez genera ocurrencia para hoy sin importar la hora de creación" (usa un `startDate` con hora tarde, ej. 23:50, y verifica que `occurrences(for: today, ...)` no quede vacío).
+
+**Criterio de aceptación**: crear un plan nuevo a cualquier hora del día permite registrar una comida contra ese plan inmediatamente, sin esperar al día siguiente.
 
 ---
 

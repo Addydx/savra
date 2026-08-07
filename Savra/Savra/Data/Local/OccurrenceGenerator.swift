@@ -4,10 +4,11 @@ enum OccurrenceGenerator {
     static func occurrences(for date: Date, from plans: [MealPlan], userId: UUID) -> [MealOccurrence] {
         plans.compactMap { plan in
             guard plan.isActive else { return nil }
-            guard plan.recurrenceRule.startDate <= date else { return nil }
-            if let endDate = plan.recurrenceRule.endDate, date > endDate { return nil }
 
             let calendar = Calendar.current
+            guard calendar.startOfDay(for: plan.recurrenceRule.startDate) <= date else { return nil }
+            if let endDate = plan.recurrenceRule.endDate, date > endDate { return nil }
+
             let weekday = calendar.component(.weekday, from: date)
 
             switch plan.recurrenceRule.kind {

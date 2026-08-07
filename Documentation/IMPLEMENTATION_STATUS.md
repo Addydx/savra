@@ -2,10 +2,21 @@
 
 ## Current Phase
 
-Phase 2 — GitHub-style compliance heatmap (constancy/achievements roadmap in progress)
+Phase 4 — Visual redesign of `Features/MealLogging/Views/` (next up)
 
 ## Completed
 
+- **Phase 1.5 — Urgent bug fix: could not log a meal against a plan created the same day**:
+  - Root cause: `OccurrenceGenerator.occurrences(for:from:userId:)` compared `plan.recurrenceRule.startDate` (stored with the exact creation time) directly against `date` (always normalized to `calendar.startOfDay(for:)` by callers like `DashboardViewModel.loadToday()`). A plan created any time after midnight failed the `startDate <= date` guard for the day it was created, so no occurrence was generated until the next day, regardless of recurrence kind.
+  - Fix: normalized the comparison to day granularity — `calendar.startOfDay(for: plan.recurrenceRule.startDate) <= date`. Checked `SwiftDataMealOccurrenceRepository`/`MealOccurrenceRepository` for the same pattern; their `startDate` is an unrelated ranged-fetch parameter already normalized with `startOfDay`, so no further change was needed there.
+  - Added `OccurrenceGeneratorTests` (4 cases): daily/once/specificDays plans created late in the day (23:50) still generate today's occurrence, and a plan starting tomorrow does not generate one for today.
+- **Phase 3 — Streaks and achievements**:
+  - Added `Domain/Models/Achievement.swift` (static catalog of logging-streak, plan-adherence-streak, perfect-week, and volume-milestone achievements), `Streak.swift` (current/longest streak value object per streak type), and `UnlockedAchievement.swift`.
+  - Added pure `Domain/Services/StreakCalculator.swift`, reusing the per-day `DailyComplianceSummary`/level computation from Phase 2 instead of duplicating it. Covered with `StreakCalculatorTests` (continuous streak, broken streak, single-day streak, streak still alive when today has no entry yet but yesterday did, zero streak when the most recent active day is older than yesterday, plan-adherence streak reusing `DailyComplianceCalculator`).
+  - Added `Domain/RepositoryProtocols/AchievementRepository.swift` + `Data/RepositoryImplementations/SwiftDataAchievementRepository.swift`, following the `SwiftDataMealLogRepository` pattern, and wired it into `AppContainer`.
+  - Added `Domain/Services/AchievementEvaluator.swift` and `Domain/UseCases/EvaluateAchievementsUseCase.swift`, triggered from `MealLoggingViewModel.saveMealLog()`, exposing newly unlocked achievements for the UI to celebrate.
+  - Added `Features/Dashboard/ViewModels/StreakViewModel.swift` + `Features/Dashboard/Views/StreakWidgetView.swift` (🔥 current streak widget) wired into `DashboardView`.
+  - Added `Features/Achievements/` (`ViewModels/AchievementsViewModel.swift`, `Views/AchievementsView.swift` badge grid, `Views/AchievementCelebrationView.swift` unlock celebration) and a new tab in `MainTabView`.
 - **Phase 2 — Contribution-style compliance heatmap**:
   - Added `Domain/Models/DayComplianceLevel.swift` (5-level `none/low/medium/high/perfect` scale) and `Domain/Models/DailyComplianceSummary.swift` (status + level + completed/total counts).
   - `DailyComplianceCalculator` gained `summary(for:)`, computing status and graded level in one pass over a day's occurrences; the original `status(for:)` now delegates to it, so existing callers are unaffected. Added unit tests covering the none/low/medium/high/perfect boundaries.
@@ -52,7 +63,6 @@ Phase 2 — GitHub-style compliance heatmap (constancy/achievements roadmap in p
 
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
 - Account deletion strategy, intentionally deferred until the corresponding future phase.
-- **Phase 3** — Streaks and achievements (new `Domain/Models/Achievement.swift`, `Streak.swift`, `UnlockedAchievement.swift`, `StreakCalculator`, `AchievementRepository`, `AchievementEvaluator`, `Features/Achievements/`, streak widget on `DashboardView`, unlock celebration).
 - **Phase 4** — Visual redesign of `Features/MealLogging/Views/` (step progress indicator, haptics, transitions, contrast/tap-target pass).
 
 ## Manual Actions Required
@@ -99,13 +109,17 @@ Phase 2 — GitHub-style compliance heatmap (constancy/achievements roadmap in p
   - Result: succeeded, only pre-existing unrelated warning remains (`CreateAccountView.swift`) — no new warnings from the Phase 2 heatmap.
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, including 5 new `DailyComplianceCalculatorTests` cases for the none/low/medium/high/perfect level boundaries (Phase 2).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded (Phase 1.5 `OccurrenceGenerator` date-normalization fix).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, including 4 new `OccurrenceGeneratorTests` cases (late-day plan creation for daily/once/specificDays recurrence, plus a plan starting tomorrow) alongside the existing `StreakCalculatorTests` and `DailyComplianceCalculatorTests` suites (Phase 1.5).
 
 ## Last Build Result
 
-Succeeded for simulator build after Phase 2 compliance heatmap.
+Succeeded for simulator build after the Phase 1.5 `OccurrenceGenerator` fix.
 
 ## Last Test Result
 
-Succeeded after Phase 2 compliance heatmap:
+Succeeded after the Phase 1.5 fix:
 
-- `DailyComplianceCalculatorTests` (including the new level-boundary cases), `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests`.
+- `OccurrenceGeneratorTests` (new), `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests`.
