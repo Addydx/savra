@@ -3,6 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     let container: AppViewModel
     @State private var viewModel: DashboardViewModel?
+    @State private var heatmapVM: ComplianceHeatmapViewModel?
 
     var body: some View {
         NavigationStack {
@@ -98,12 +99,49 @@ struct DashboardView: View {
         }
     }
 
+    @ViewBuilder
     private func complianceSection(vm: DashboardViewModel) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Constancia")
-                .font(.headline)
+            HStack {
+                Text("Constancia")
+                    .font(.headline)
+                Spacer()
+            }
 
-            ComplianceCalendarView(complianceDays: vm.complianceDays)
+            if let heatmapVM {
+                Picker("Rango", selection: Binding(
+                    get: { heatmapVM.range },
+                    set: { heatmapVM.range = $0 }
+                )) {
+                    ForEach(ComplianceHeatmapViewModel.Range.allCases) { range in
+                        Text(range.rawValue).tag(range)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if heatmapVM.isLoading && heatmapVM.daySummaries.isEmpty {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
+                } else {
+                    ComplianceHeatmapView(
+                        daySummaries: heatmapVM.daySummaries,
+                        rangeDays: heatmapVM.range.days
+                    )
+                }
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .onAppear {
+                        let vm = ComplianceHeatmapViewModel(
+                            container: container.container,
+                            userId: container.userId
+                        )
+                        heatmapVM = vm
+                        Task { await vm.load() }
+                    }
+            }
         }
     }
 

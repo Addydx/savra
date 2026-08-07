@@ -2,10 +2,17 @@
 
 ## Current Phase
 
-Phase 1 — Meal logging flow fixes (constancy/achievements roadmap in progress)
+Phase 2 — GitHub-style compliance heatmap (constancy/achievements roadmap in progress)
 
 ## Completed
 
+- **Phase 2 — Contribution-style compliance heatmap**:
+  - Added `Domain/Models/DayComplianceLevel.swift` (5-level `none/low/medium/high/perfect` scale) and `Domain/Models/DailyComplianceSummary.swift` (status + level + completed/total counts).
+  - `DailyComplianceCalculator` gained `summary(for:)`, computing status and graded level in one pass over a day's occurrences; the original `status(for:)` now delegates to it, so existing callers are unaffected. Added unit tests covering the none/low/medium/high/perfect boundaries.
+  - Added `MealOccurrenceRepository.fetch(from:to:userId:)` (+ `SwiftDataMealOccurrenceRepository` implementation) for a single ranged fetch instead of one query per day.
+  - Added `ComplianceHeatmapViewModel` (`Features/Dashboard/ViewModels/`): loads a selectable range (3/6/12 months) with exactly one plans fetch and one ranged occurrence fetch, then computes each day's summary locally by reusing `OccurrenceGenerator` — this is what the Phase 1 dashboard perf fix was in service of.
+  - Replaced the old 4-week, 3-color `ComplianceCalendarView` with `ComplianceHeatmapView` (`Features/Dashboard/Views/`): GitHub-style weeks-as-columns grid, rounded square cells colored by level, month labels, a "Menos → Más" legend, horizontal scroll up to 12 months back, and a tap-to-popover tooltip showing the date and "`completed`/`total` comidas completadas".
+  - Wired the heatmap into `DashboardView` with a segmented range picker; it loads lazily via its own view model so it no longer sits in `DashboardViewModel.loadToday()`'s critical path. Removed the now-dead `complianceDays`/30-day loop from `DashboardViewModel`.
 - **Phase 1 — Meal logging flow fixes**:
   - Fixed `MealLoggingFlowView` "add photo" step: the continue button now reads "Continuar" when a photo was already selected and "Continuar sin foto" only when none was picked, instead of always showing the misleading "sin foto" label.
   - Added per-food quantity/unit input: `MealLoggingViewModel` now tracks a `foodQuantities: [UUID: SelectedFoodQuantity]` map (quantity stepper + unit menu with `porción/g/ml/taza/cucharada/unidad`), rendered per item in `MealLogReviewView`. Values are persisted into `MealLogItem.quantity`/`.unit` in `saveMealLog()` instead of always saving `nil`.
@@ -45,7 +52,6 @@ Phase 1 — Meal logging flow fixes (constancy/achievements roadmap in progress)
 
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
 - Account deletion strategy, intentionally deferred until the corresponding future phase.
-- **Phase 2** — GitHub-style contribution heatmap for compliance (replace the 4-week `ComplianceCalendarView` with a leveled, scrollable multi-month heatmap; needs a `DayComplianceLevel`/percentage calculation and a ranged fetch on `MealOccurrenceRepository`).
 - **Phase 3** — Streaks and achievements (new `Domain/Models/Achievement.swift`, `Streak.swift`, `UnlockedAchievement.swift`, `StreakCalculator`, `AchievementRepository`, `AchievementEvaluator`, `Features/Achievements/`, streak widget on `DashboardView`, unlock celebration).
 - **Phase 4** — Visual redesign of `Features/MealLogging/Views/` (step progress indicator, haptics, transitions, contrast/tap-target pass).
 
@@ -89,13 +95,17 @@ Phase 1 — Meal logging flow fixes (constancy/achievements roadmap in progress)
   - Result: succeeded, no new warnings (Phase 1 meal logging fixes).
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, all existing unit tests still pass (Phase 1 meal logging fixes).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded, only pre-existing unrelated warning remains (`CreateAccountView.swift`) — no new warnings from the Phase 2 heatmap.
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, including 5 new `DailyComplianceCalculatorTests` cases for the none/low/medium/high/perfect level boundaries (Phase 2).
 
 ## Last Build Result
 
-Succeeded for simulator build after Phase 1 meal logging fixes.
+Succeeded for simulator build after Phase 2 compliance heatmap.
 
 ## Last Test Result
 
-Succeeded after Phase 1 meal logging fixes:
+Succeeded after Phase 2 compliance heatmap:
 
-- `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests`.
+- `DailyComplianceCalculatorTests` (including the new level-boundary cases), `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests`.

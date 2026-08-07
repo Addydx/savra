@@ -9,7 +9,6 @@ final class DashboardViewModel {
     var totalRequiredCount = 0
     var userName: String = ""
     var isLoading = true
-    var complianceDays: [Date: DayComplianceStatus] = [:]
     var showMealLogger = false
     var selectedOccurrence: (plan: MealPlan, occurrence: MealOccurrence)?
 
@@ -54,27 +53,6 @@ final class DashboardViewModel {
             todayOccurrences = merged
             totalRequiredCount = merged.filter { $0.1.isRequired }.count
             completedCount = merged.filter { $0.1.isRequired && $0.1.status == .completed }.count
-
-            let calendar = Calendar.current
-            let todayStart = calendar.startOfDay(for: Date())
-            var dayStatuses: [Date: DayComplianceStatus] = [:]
-            for dayOffset in -29...0 {
-                guard let date = calendar.date(byAdding: .day, value: dayOffset, to: todayStart) else { continue }
-                let dayOccurrences = OccurrenceGenerator.occurrences(for: date, from: plans, userId: userIdUUID)
-                let dayPersisted = try await container.mealOccurrenceRepository.fetch(on: date, userId: userIdUUID)
-                var mergedOccs: [MealOccurrence] = []
-                for p in plans {
-                    if dayOccurrences.contains(where: { $0.mealPlanId == p.id }),
-                       let pers = dayPersisted.first(where: { $0.mealPlanId == p.id }) {
-                        mergedOccs.append(pers)
-                    } else if let c = dayOccurrences.first(where: { $0.mealPlanId == p.id }) {
-                        mergedOccs.append(c)
-                    }
-                }
-                let status = DailyComplianceCalculator().status(for: mergedOccs)
-                dayStatuses[date] = status
-            }
-            complianceDays = dayStatuses
         } catch {
             todayOccurrences = []
         }

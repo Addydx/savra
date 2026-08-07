@@ -36,6 +36,58 @@ struct DailyComplianceCalculatorTests {
         #expect(calculator.status(for: occurrences) == .achieved)
     }
 
+    @Test func dayWithoutOccurrencesHasNoneLevel() {
+        let summary = calculator.summary(for: [])
+        #expect(summary.level == .none)
+        #expect(summary.completedCount == 0)
+        #expect(summary.totalCount == 0)
+    }
+
+    @Test func fullyCompletedDayHasPerfectLevel() {
+        let occurrences = [
+            makeOccurrence(status: .completed),
+            makeOccurrence(status: .completed)
+        ]
+
+        let summary = calculator.summary(for: occurrences)
+        #expect(summary.level == .perfect)
+        #expect(summary.completedCount == 2)
+        #expect(summary.totalCount == 2)
+    }
+
+    @Test func zeroOfThreeRequiredCompletedHasNoneLevel() {
+        let occurrences = [
+            makeOccurrence(status: .scheduled),
+            makeOccurrence(status: .scheduled),
+            makeOccurrence(status: .scheduled)
+        ]
+
+        let summary = calculator.summary(for: occurrences)
+        #expect(summary.level == .none)
+        #expect(summary.totalCount == 3)
+    }
+
+    @Test func oneOfFourRequiredCompletedHasLowLevel() {
+        let occurrences = [
+            makeOccurrence(status: .completed),
+            makeOccurrence(status: .scheduled),
+            makeOccurrence(status: .scheduled),
+            makeOccurrence(status: .scheduled)
+        ]
+
+        #expect(calculator.summary(for: occurrences).level == .low)
+    }
+
+    @Test func twoOfThreeRequiredCompletedHasHighLevel() {
+        let occurrences = [
+            makeOccurrence(status: .completed),
+            makeOccurrence(status: .completed),
+            makeOccurrence(status: .scheduled)
+        ]
+
+        #expect(calculator.summary(for: occurrences).level == .high)
+    }
+
     private func makeOccurrence(
         status: MealOccurrence.Status,
         isRequired: Bool = true

@@ -51,6 +51,18 @@ final class SwiftDataMealOccurrenceRepository: @unchecked Sendable, MealOccurren
         return try context.fetch(descriptor).map { $0.toDomain() }
     }
 
+    func fetch(from startDate: Date, to endDate: Date, userId: UUID) async throws -> [MealOccurrence] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: startDate)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: endDate)) else { return [] }
+        let uid = userId.uuidString
+        let predicate = #Predicate<SDMealOccurrence> {
+            $0.userId == uid && $0.scheduledDate >= start && $0.scheduledDate < end
+        }
+        let descriptor = FetchDescriptor<SDMealOccurrence>(predicate: predicate)
+        return try context.fetch(descriptor).map { $0.toDomain() }
+    }
+
     func upsert(for planId: UUID, on date: Date, userId: UUID, status: MealOccurrence.Status, timeHour: Int?, timeMinute: Int?) async throws -> MealOccurrence {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: date)
