@@ -2,6 +2,11 @@ import Foundation
 import SwiftUI
 import PhotosUI
 
+struct SelectedFoodQuantity: Equatable, Sendable {
+    var quantity: Double
+    var unit: String
+}
+
 @MainActor
 @Observable
 final class MealLoggingViewModel {
@@ -11,12 +16,16 @@ final class MealLoggingViewModel {
     let preSelectedPlan: MealPlan?
     let preSelectedOccurrence: MealOccurrence?
 
+    static let unitOptions = ["porción", "g", "ml", "taza", "cucharada", "unidad"]
+    private static let defaultUnit = "porción"
+
     var step: Step = .selectPlan
     var selectedPlan: MealPlan?
     var selectedOccurrence: MealOccurrence?
     var eatenAt: Date
     var notes: String = ""
     var selectedFoods: [FoodItem] = []
+    var foodQuantities: [UUID: SelectedFoodQuantity] = [:]
     var photoData: Data?
     var photoItem: PhotosPickerItem?
     var isLoading = false
@@ -70,11 +79,33 @@ final class MealLoggingViewModel {
     func addFood(_ food: FoodItem) {
         if !selectedFoods.contains(where: { $0.id == food.id }) {
             selectedFoods.append(food)
+            foodQuantities[food.id] = SelectedFoodQuantity(quantity: 1, unit: Self.defaultUnit)
         }
     }
 
     func removeFood(_ food: FoodItem) {
         selectedFoods.removeAll { $0.id == food.id }
+        foodQuantities.removeValue(forKey: food.id)
+    }
+
+    func quantity(for food: FoodItem) -> Double {
+        foodQuantities[food.id]?.quantity ?? 1
+    }
+
+    func unit(for food: FoodItem) -> String {
+        foodQuantities[food.id]?.unit ?? Self.defaultUnit
+    }
+
+    func setQuantity(_ quantity: Double, for food: FoodItem) {
+        var entry = foodQuantities[food.id] ?? SelectedFoodQuantity(quantity: 1, unit: Self.defaultUnit)
+        entry.quantity = max(0, quantity)
+        foodQuantities[food.id] = entry
+    }
+
+    func setUnit(_ unit: String, for food: FoodItem) {
+        var entry = foodQuantities[food.id] ?? SelectedFoodQuantity(quantity: 1, unit: Self.defaultUnit)
+        entry.unit = unit
+        foodQuantities[food.id] = entry
     }
 
     func continueToReview() {
@@ -117,14 +148,15 @@ final class MealLoggingViewModel {
                 updatedAt: .now
             )
 
-            let items = selectedFoods.map { food in
-                MealLogItem(
+            let items = selectedFoods.map { food -> MealLogItem in
+                let entry = foodQuantities[food.id]
+                return MealLogItem(
                     id: UUID(),
                     mealLogId: logId,
                     foodItemId: food.id,
                     displayName: food.name,
-                    quantity: nil,
-                    unit: nil
+                    quantity: entry?.quantity,
+                    unit: entry?.unit
                 )
             }
 

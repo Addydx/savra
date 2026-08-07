@@ -25,19 +25,25 @@ struct MealLoggingFlowView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModel.isSaved {
-                    savedView
-                } else {
-                    switch viewModel.step {
-                    case .selectPlan:
-                        selectPlanView
-                    case .addPhoto:
-                        addPhotoView
-                    case .searchFood:
-                        FoodSearchView(viewModel: viewModel)
-                    case .review:
-                        MealLogReviewView(viewModel: viewModel, dismiss: dismiss)
+            VStack(spacing: 0) {
+                if let error = viewModel.errorMessage {
+                    errorBanner(error)
+                }
+
+                Group {
+                    if viewModel.isSaved {
+                        savedView
+                    } else {
+                        switch viewModel.step {
+                        case .selectPlan:
+                            selectPlanView
+                        case .addPhoto:
+                            addPhotoView
+                        case .searchFood:
+                            FoodSearchView(viewModel: viewModel)
+                        case .review:
+                            MealLogReviewView(viewModel: viewModel, dismiss: dismiss)
+                        }
                     }
                 }
             }
@@ -51,6 +57,15 @@ struct MealLoggingFlowView: View {
                 }
             }
         }
+    }
+
+    private func errorBanner(_ message: String) -> some View {
+        Text(message)
+            .font(.footnote)
+            .foregroundColor(.white)
+            .padding(10)
+            .frame(maxWidth: .infinity)
+            .background(Color.red)
     }
 
     private var titleForStep: String {
@@ -137,9 +152,17 @@ struct MealLoggingFlowView: View {
                         get: { viewModel.photoItem },
                         set: { newItem in
                             viewModel.photoItem = newItem
+                            guard let newItem else { return }
                             Task {
-                                if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                                    viewModel.photoData = data
+                                do {
+                                    if let data = try await newItem.loadTransferable(type: Data.self) {
+                                        viewModel.photoData = data
+                                        viewModel.errorMessage = nil
+                                    } else {
+                                        viewModel.errorMessage = "No se pudo cargar la foto seleccionada."
+                                    }
+                                } catch {
+                                    viewModel.errorMessage = "No se pudo cargar la foto: \(error.localizedDescription)"
                                 }
                             }
                         }
@@ -166,7 +189,7 @@ struct MealLoggingFlowView: View {
             Spacer()
 
             Button(action: { viewModel.continueWithoutPhoto() }) {
-                Text("Continuar sin foto")
+                Text(viewModel.photoData != nil ? "Continuar" : "Continuar sin foto")
                     .font(.body)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)

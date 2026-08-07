@@ -60,12 +60,11 @@ final class DashboardViewModel {
             var dayStatuses: [Date: DayComplianceStatus] = [:]
             for dayOffset in -29...0 {
                 guard let date = calendar.date(byAdding: .day, value: dayOffset, to: todayStart) else { continue }
-                let dayPlans = try await container.mealPlanRepository.fetchActive(for: userIdUUID)
-                let dayOccurrences = OccurrenceGenerator.occurrences(for: date, from: dayPlans, userId: userIdUUID)
+                let dayOccurrences = OccurrenceGenerator.occurrences(for: date, from: plans, userId: userIdUUID)
                 let dayPersisted = try await container.mealOccurrenceRepository.fetch(on: date, userId: userIdUUID)
                 var mergedOccs: [MealOccurrence] = []
-                for p in dayPlans {
-                    if let c = dayOccurrences.first(where: { $0.mealPlanId == p.id }),
+                for p in plans {
+                    if dayOccurrences.contains(where: { $0.mealPlanId == p.id }),
                        let pers = dayPersisted.first(where: { $0.mealPlanId == p.id }) {
                         mergedOccs.append(pers)
                     } else if let c = dayOccurrences.first(where: { $0.mealPlanId == p.id }) {

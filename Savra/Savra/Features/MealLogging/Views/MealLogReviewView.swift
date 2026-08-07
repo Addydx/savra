@@ -17,8 +17,15 @@ struct MealLogReviewView: View {
                 }
 
                 VStack(spacing: 16) {
-                    detailRow(label: "Fecha", value: dateFormatted(viewModel.eatenAt))
-                    detailRow(label: "Hora", value: timeFormatted(viewModel.eatenAt))
+                    DatePicker(
+                        "¿Cuándo comiste?",
+                        selection: Binding(
+                            get: { viewModel.eatenAt },
+                            set: { viewModel.eatenAt = $0 }
+                        ),
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.compact)
 
                     if let plan = viewModel.selectedPlan {
                         detailRow(label: "Plan", value: "\(plan.emoji ?? "") \(plan.name)")
@@ -39,17 +46,10 @@ struct MealLogReviewView: View {
                             .foregroundColor(.secondary)
                     } else {
                         ForEach(viewModel.selectedFoods) { food in
-                            HStack {
-                                Text(food.name)
-                                    .font(.body)
-                                Spacer()
-                                if let cat = food.category {
-                                    Text(cat)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
+                            foodQuantityRow(food)
+                            if food.id != viewModel.selectedFoods.last?.id {
+                                Divider()
                             }
-                            .padding(.vertical, 4)
                         }
                     }
 
@@ -74,12 +74,6 @@ struct MealLogReviewView: View {
                         .padding(8)
                         .background(Color(.systemGray6))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(.callout)
-                        .foregroundColor(.red)
                 }
 
                 Button(action: { Task { await viewModel.saveMealLog() } }) {
@@ -117,17 +111,57 @@ struct MealLogReviewView: View {
         }
     }
 
-    private func dateFormatted(_ date: Date) -> String {
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "es_MX")
-        df.dateStyle = .long
-        return df.string(from: date)
+    private func foodQuantityRow(_ food: FoodItem) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(food.name)
+                    .font(.body)
+                Spacer()
+                if let cat = food.category {
+                    Text(cat)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            HStack(spacing: 12) {
+                Stepper(
+                    value: Binding(
+                        get: { viewModel.quantity(for: food) },
+                        set: { viewModel.setQuantity($0, for: food) }
+                    ),
+                    in: 0...999,
+                    step: 0.5
+                ) {
+                    Text(quantityLabel(viewModel.quantity(for: food)))
+                        .font(.subheadline.monospacedDigit())
+                }
+
+                Menu {
+                    ForEach(MealLoggingViewModel.unitOptions, id: \.self) { unit in
+                        Button(unit) { viewModel.setUnit(unit, for: food) }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(viewModel.unit(for: food))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2)
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 44)
+                    .background(Color(.systemGray5))
+                    .clipShape(Capsule())
+                }
+            }
+        }
+        .padding(.vertical, 6)
     }
 
-    private func timeFormatted(_ date: Date) -> String {
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "es_MX")
-        df.timeStyle = .short
-        return df.string(from: date)
+    private func quantityLabel(_ value: Double) -> String {
+        let formatted = value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
+        return "Cantidad: \(formatted)"
     }
 }

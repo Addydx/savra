@@ -2,10 +2,16 @@
 
 ## Current Phase
 
-Phase 0 — Foundation
+Phase 1 — Meal logging flow fixes (constancy/achievements roadmap in progress)
 
 ## Completed
 
+- **Phase 1 — Meal logging flow fixes**:
+  - Fixed `MealLoggingFlowView` "add photo" step: the continue button now reads "Continuar" when a photo was already selected and "Continuar sin foto" only when none was picked, instead of always showing the misleading "sin foto" label.
+  - Added per-food quantity/unit input: `MealLoggingViewModel` now tracks a `foodQuantities: [UUID: SelectedFoodQuantity]` map (quantity stepper + unit menu with `porción/g/ml/taza/cucharada/unidad`), rendered per item in `MealLogReviewView`. Values are persisted into `MealLogItem.quantity`/`.unit` in `saveMealLog()` instead of always saving `nil`.
+  - Made `eatenAt` editable: replaced the static "Fecha"/"Hora" text rows in `MealLogReviewView` with a compact `DatePicker` so users can correct when they actually ate.
+  - Fixed a performance issue in `DashboardViewModel.loadToday()`: the 30-day compliance loop called `mealPlanRepository.fetchActive(for:)` on every iteration; it now fetches active plans once and reuses them for both today's occurrences and the historical loop. This is the performance baseline Phase 2's longer-range heatmap (up to 1 year) depends on.
+  - Propagated `errorMessage` across the whole flow: `MealLoggingFlowView` now renders a shared error banner above every step (not just the review step), and the photo picker sets `errorMessage` if loading the selected image fails instead of silently discarding the error.
 - Created the initial architecture folders from `06-APPLICATION-ARCHITECTURE.md`.
 - Added pure Domain models, value objects, enums, and fundamental states for Foundation.
 - Added pure domain service `DailyComplianceCalculator`.
@@ -37,11 +43,11 @@ Phase 0 — Foundation
 
 ## Pending
 
-- Firebase Authentication behavior and UI, scheduled for Phase 1.
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
-- Firebase Storage integration in the phase that introduces meal photos.
-- SwiftData local models, intentionally outside the current Foundation completion.
 - Account deletion strategy, intentionally deferred until the corresponding future phase.
+- **Phase 2** — GitHub-style contribution heatmap for compliance (replace the 4-week `ComplianceCalendarView` with a leveled, scrollable multi-month heatmap; needs a `DayComplianceLevel`/percentage calculation and a ranged fetch on `MealOccurrenceRepository`).
+- **Phase 3** — Streaks and achievements (new `Domain/Models/Achievement.swift`, `Streak.swift`, `UnlockedAchievement.swift`, `StreakCalculator`, `AchievementRepository`, `AchievementEvaluator`, `Features/Achievements/`, streak widget on `DashboardView`, unlock celebration).
+- **Phase 4** — Visual redesign of `Features/MealLogging/Views/` (step progress indicator, haptics, transitions, contrast/tap-target pass).
 
 ## Manual Actions Required
 
@@ -79,14 +85,17 @@ Phase 0 — Foundation
   - Result: no forbidden imports found in Domain.
 - `find Savra -name GoogleService-Info.plist -print`
   - Result: one repository copy found at `Savra/Savra/GoogleService-Info.plist`.
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded, no new warnings (Phase 1 meal logging fixes).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, all existing unit tests still pass (Phase 1 meal logging fixes).
 
 ## Last Build Result
 
-Succeeded for simulator and signed generic iOS builds.
+Succeeded for simulator build after Phase 1 meal logging fixes.
 
 ## Last Test Result
 
-Succeeded for Phase 0 tests:
+Succeeded after Phase 1 meal logging fixes:
 
-- Seven `SavraTests` unit tests passed.
-- `SavraUITestsLaunchTests.testLaunch()` passed on all generated launch-test variants.
+- `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests`.
