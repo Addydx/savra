@@ -8,6 +8,7 @@ final class ProfileViewModel {
     var photoThumbnailPath: String?
     var isLoading = false
     var errorMessage: String?
+    var successMessage: String?
 
     let container: AppContainer
     let userId: String
@@ -77,6 +78,53 @@ final class ProfileViewModel {
             appViewModel?.userDisplayName = trimmedName
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    func changePassword(currentPassword: String, newPassword: String) async {
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        defer { isLoading = false }
+
+        guard newPassword.count >= 6 else {
+            errorMessage = AuthError.weakPassword.errorDescription
+            return
+        }
+
+        do {
+            try await container.authService.reauthenticate(password: currentPassword)
+            try await container.authService.updatePassword(newPassword)
+            successMessage = "Contraseña actualizada"
+        } catch let error as AuthError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = AuthError.from(error).errorDescription
+        }
+    }
+
+    func changeEmail(newEmail: String, currentPassword: String) async {
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+        defer { isLoading = false }
+
+        let trimmedEmail = newEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty else {
+            errorMessage = AuthError.invalidEmail.errorDescription
+            return
+        }
+
+        do {
+            try await container.authService.reauthenticate(password: currentPassword)
+            try await container.authService.updateEmail(trimmedEmail)
+            try? await container.authService.sendEmailVerification()
+            appViewModel?.userEmail = trimmedEmail
+            successMessage = "Correo actualizado. Revisa tu bandeja para verificarlo."
+        } catch let error as AuthError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = AuthError.from(error).errorDescription
         }
     }
 }

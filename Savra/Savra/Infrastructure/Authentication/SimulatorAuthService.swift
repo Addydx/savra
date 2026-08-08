@@ -83,4 +83,17 @@ final class SimulatorAuthService: AuthServiceProtocol {
     func updateDisplayName(_ name: String) async throws {
         defaults.set(name, forKey: nameKey)
     }
+
+    func reauthenticate(password: String) async throws {
+        // No real password is stored in the simulator's stand-in auth; only guard against empty input.
+        guard !password.isEmpty else { throw AuthError.wrongCredentials }
+    }
+
+    func updateEmail(_ newEmail: String) async throws {
+        defaults.set(newEmail, forKey: emailKey)
+    }
+
+    func updatePassword(_ newPassword: String) async throws {
+        // No-op: the simulator's stand-in auth doesn't store a password.
+    }
 }

@@ -2,10 +2,16 @@
 
 ## Current Phase
 
-`PROMPT-claude-code-account-personalization.md` Phase B done; Phase C (change password/email) next.
+`PROMPT-claude-code-account-personalization.md` Phase C done; Phase D (app preferences) next.
 
 ## Completed
 
+- **Account Personalization — Phase C: change password and email**:
+  - Added `AuthServiceProtocol.reauthenticate(password:)`, `.updateEmail(_:)`, `.updatePassword(_:)`. `FirebaseAuthService` implements them with `EmailAuthProvider.credential(withEmail:password:)` + `user.reauthenticate(with:)`, then `user.updateEmail(to:)`/`updatePassword(to:)`. **Caveat**: like the rest of `FirebaseAuthService`'s real branch, this code lives behind `#if !targetEnvironment(simulator)` and is never compiled by the simulator build/test commands this project standardizes on — only `SimulatorAuthService`'s stubs are exercised by `xcodebuild ... -destination 'platform=iOS Simulator...'`. A `generic/platform=iOS` build (done once during Phase 0 setup) would be needed to type-check the real Firebase branch.
+  - `SimulatorAuthService` gets coherent stand-ins: `reauthenticate` just rejects an empty password (there's no real password to check), `updateEmail` writes the `UserDefaults` email key, `updatePassword` is a no-op.
+  - Added `AuthError.requiresRecentLogin` (Spanish message) mapped from `AuthErrorCode.requiresRecentLogin` in `AuthError.from(_:)`.
+  - Added `ProfileViewModel.changePassword(currentPassword:newPassword:)` and `.changeEmail(newEmail:currentPassword:)`, both reauthenticating first; `changeEmail` also re-triggers `sendEmailVerification()` (Firebase marks a changed email unverified) and updates `AppViewModel.userEmail` immediately. Added a `successMessage` alongside the existing `errorMessage` for inline feedback.
+  - Added `Features/Profile/Views/SecuritySectionView.swift`: a "Seguridad" `Section` embedded directly in `ProfileView`'s `List` (no separate screen, per the prompt) with two `DisclosureGroup` inline forms — change password (current + new + confirm, ≥6 chars) and change email (new email + current password) — each collapsing back and clearing its fields on success.
 - **Account Personalization — Phase B: edit name and photo**:
   - Added `AuthServiceProtocol.updateDisplayName(_:)`, implemented in `FirebaseAuthService` (via `createProfileChangeRequest()`, same as `signUp`) and `SimulatorAuthService` (writes to the same `UserDefaults` key `currentUserName` reads).
   - Added `ProfileViewModel.updateProfile(name:photoData:)`: calls `authService.updateDisplayName`, saves a new photo via `imageService.prepareProfileImageData` (Phase A) only when `photoData` is provided (keeps existing paths otherwise), upserts `UserProfileRepository`, and — since `ProfileViewModel` now takes an optional `appViewModel: AppViewModel` reference — writes straight to `AppViewModel.userDisplayName` so Dashboard/toolbar update without an app restart.
@@ -76,13 +82,13 @@
 
 ## In Progress
 
-- `PROMPT-claude-code-account-personalization.md` Phase C — change password/email.
+- `PROMPT-claude-code-account-personalization.md` Phase D — app preferences.
 
 ## Pending
 
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
 - Account deletion strategy — Phase E of `PROMPT-claude-code-account-personalization.md` resolves this (ADR-009 to be written first).
-- `PROMPT-claude-code-account-personalization.md` Phases C (change password/email), D (app preferences), E (delete account).
+- `PROMPT-claude-code-account-personalization.md` Phases D (app preferences), E (delete account).
 
 ## Manual Actions Required
 
@@ -146,13 +152,17 @@
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, all 24 existing tests still pass (Phase B).
 - Manual verification in the iOS Simulator (logged-in test account): edited display name via `EditProfileView`, saved, confirmed `ProfileView` updated immediately without a restart, then force-quit and relaunched the app and confirmed the new name persisted from `SDUserProfile`.
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded, no new warnings (Account Personalization Phase C — reauthenticate/updateEmail/updatePassword, `SecuritySectionView`). Note: this build only compiles `SimulatorAuthService`'s stubs and `AuthServiceProtocol`/`AuthError` changes; `FirebaseAuthService`'s real branch is gated behind `#if !targetEnvironment(simulator)` and isn't exercised here.
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, all 24 existing tests still pass (Phase C).
 
 ## Last Build Result
 
-Succeeded for simulator build after Account Personalization Phase B.
+Succeeded for simulator build after Account Personalization Phase C.
 
 ## Last Test Result
 
-Succeeded after Account Personalization Phase B:
+Succeeded after Account Personalization Phase C:
 
 - `OccurrenceGeneratorTests`, `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests` (24 tests, no regressions).

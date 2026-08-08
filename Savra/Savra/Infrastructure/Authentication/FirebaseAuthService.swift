@@ -16,6 +16,7 @@ enum AuthError: LocalizedError {
     case unknown(String)
     case signOutFailed
     case sendFailed
+    case requiresRecentLogin
 
     var errorDescription: String? {
         switch self {
@@ -30,6 +31,7 @@ enum AuthError: LocalizedError {
         case .unknown(let msg): return msg
         case .signOutFailed: return "Error al cerrar sesión"
         case .sendFailed: return "Error al enviar el correo. Intenta de nuevo"
+        case .requiresRecentLogin: return "Por seguridad, vuelve a ingresar tu contraseña actual"
         }
     }
 
@@ -44,6 +46,7 @@ enum AuthError: LocalizedError {
         case AuthErrorCode.userNotFound.rawValue: return .userNotFound
         case AuthErrorCode.tooManyRequests.rawValue: return .tooManyRequests
         case AuthErrorCode.networkError.rawValue: return .networkError
+        case AuthErrorCode.requiresRecentLogin.rawValue: return .requiresRecentLogin
         default: return .unknown(error.localizedDescription)
         }
         #else
@@ -135,6 +138,22 @@ final class FirebaseAuthService: AuthServiceProtocol {
         changeRequest.displayName = name
         try await changeRequest.commitChanges()
     }
+
+    func reauthenticate(password: String) async throws {
+        guard let user = auth.currentUser, let email = user.email else { throw AuthError.userNotFound }
+        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+        try await user.reauthenticate(with: credential)
+    }
+
+    func updateEmail(_ newEmail: String) async throws {
+        guard let user = auth.currentUser else { throw AuthError.userNotFound }
+        try await user.updateEmail(to: newEmail)
+    }
+
+    func updatePassword(_ newPassword: String) async throws {
+        guard let user = auth.currentUser else { throw AuthError.userNotFound }
+        try await user.updatePassword(to: newPassword)
+    }
 }
 
 #else
@@ -163,6 +182,15 @@ final class FirebaseAuthService: AuthServiceProtocol {
         throw AuthError.firebaseNotAvailable
     }
     func updateDisplayName(_ name: String) async throws {
+        throw AuthError.firebaseNotAvailable
+    }
+    func reauthenticate(password: String) async throws {
+        throw AuthError.firebaseNotAvailable
+    }
+    func updateEmail(_ newEmail: String) async throws {
+        throw AuthError.firebaseNotAvailable
+    }
+    func updatePassword(_ newPassword: String) async throws {
         throw AuthError.firebaseNotAvailable
     }
 }

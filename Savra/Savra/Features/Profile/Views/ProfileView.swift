@@ -52,6 +52,10 @@ struct ProfileView: View {
                     }
                 }
 
+                if let vm = viewModel {
+                    SecuritySectionView(viewModel: vm)
+                }
+
                 Section {
                     Button(role: .destructive, action: { showSignOutAlert = true }) {
                         Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
