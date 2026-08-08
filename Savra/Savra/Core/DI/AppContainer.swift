@@ -10,6 +10,7 @@ final class AppContainer {
     let mealLogRepository: SwiftDataMealLogRepository
     let foodCatalogRepository: LocalFoodCatalogRepository
     let achievementRepository: SwiftDataAchievementRepository
+    let userProfileRepository: SwiftDataUserProfileRepository
     let imageService: LocalImageService
     let evaluateAchievementsUseCase: EvaluateAchievementsUseCase
 
@@ -27,6 +28,7 @@ final class AppContainer {
         self.mealLogRepository = SwiftDataMealLogRepository(context: context)
         self.foodCatalogRepository = LocalFoodCatalogRepository(context: context)
         self.achievementRepository = SwiftDataAchievementRepository(context: context)
+        self.userProfileRepository = SwiftDataUserProfileRepository(context: context)
         self.imageService = LocalImageService()
         self.evaluateAchievementsUseCase = EvaluateAchievementsUseCase(
             mealPlanRepository: mealPlanRepository,

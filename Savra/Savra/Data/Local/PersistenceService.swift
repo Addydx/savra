@@ -15,6 +15,7 @@ final class PersistenceService {
             SDMealLogPhoto.self,
             SDFoodItem.self,
             SDUnlockedAchievement.self,
+            SDUserProfile.self,
         ])
         container = try! ModelContainer(for: schema)
     }

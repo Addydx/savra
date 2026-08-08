@@ -2,10 +2,17 @@
 
 ## Current Phase
 
-All 5 phases from `PROMPT-claude-code-meal-logging-streaks.md` are complete.
+`PROMPT-claude-code-account-personalization.md` Phase A done; Phase B (edit name/photo) next.
 
 ## Completed
 
+- **Account Personalization — Phase A: `ProfileViewModel` + profile persistence**:
+  - Added `Domain/Models/UserProfile.swift` and `Domain/RepositoryProtocols/UserProfileRepository.swift` (`fetch(userId:)`, `upsert(_:)`).
+  - Added `SDUserProfile` to `SwiftDataModels.swift` (`displayName`, `photoLocalPath`, `photoThumbnailPath`, timestamps) + `toDomain()`/`fromDomain()`, registered in `PersistenceService`'s `Schema([...])`.
+  - Added `Data/RepositoryImplementations/SwiftDataUserProfileRepository.swift` following the `SwiftDataMealPlanRepository` pattern.
+  - Generalized image handling without duplicating the compression/thumbnail logic: `LocalImageService` now has a private `prepareImage(_:filename:)` helper shared by the existing `prepareImageData(_:mealLogId:)` and the new `prepareProfileImageData(_:userId:)` (declared on `ImageServiceProtocol` too), which prefixes the filename (`profile_<uuid>`) to avoid colliding with meal-log photos in the same `Images/` directory.
+  - Injected `userProfileRepository` into `AppContainer`.
+  - Added `Features/Profile/ViewModels/ProfileViewModel.swift` (`@MainActor @Observable`, same pattern as `DashboardViewModel`): loads the local profile by `userId` on `.task`. `ProfileView` now constructs it (same lazy-`@State` pattern as `DashboardView`) and reads `displayName`/photo thumbnail from it, falling back to `AppViewModel.userDisplayName` while no local profile exists yet. `AppViewModel` still owns session/auth state (email, auth state, sign-out); `ProfileViewModel` is the new source of truth for editable profile data, ready for Phase B.
 - **Phase 4 — Visual redesign of `Features/MealLogging/Views/`**:
   - Added a step progress indicator: `MealLoggingViewModel.Step` gained `index`/`Step.totalSteps`, and `MealLoggingFlowView` renders a 4-segment progress bar + "Paso X de 4" below the nav title, hidden once `isSaved`.
   - Added transitions between steps: `.transition(.asymmetric(...))` + `.animation` on the step `switch` in `MealLoggingFlowView`.
@@ -63,12 +70,13 @@ All 5 phases from `PROMPT-claude-code-meal-logging-streaks.md` are complete.
 
 ## In Progress
 
-- None for Phase 0.
+- `PROMPT-claude-code-account-personalization.md` Phase B — edit name/photo.
 
 ## Pending
 
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
-- Account deletion strategy, intentionally deferred until the corresponding future phase.
+- Account deletion strategy — Phase E of `PROMPT-claude-code-account-personalization.md` resolves this (ADR-009 to be written first).
+- `PROMPT-claude-code-account-personalization.md` Phases C (change password/email), D (app preferences), E (delete account).
 
 ## Manual Actions Required
 
@@ -123,13 +131,17 @@ All 5 phases from `PROMPT-claude-code-meal-logging-streaks.md` are complete.
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, all 24 existing tests still pass (Phase 4 touched only Views/ViewModel UI concerns, no domain logic changed).
 - Manual verification in the iOS Simulator (logged-in test account): full meal logging flow (select plan → photo → search food → review → save) exercised end-to-end; progress bar advanced "Paso 1 de 4" → "Paso 4 de 4", food add/remove worked with the selected-foods chip bar, save completed and returned to the Dashboard.
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded (Account Personalization Phase A — `SDUserProfile`, `UserProfileRepository`, `ProfileViewModel`, generalized image service).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, all 24 existing tests still pass (Phase A added persistence/DI plumbing, no domain logic changed, so no new tests needed).
 
 ## Last Build Result
 
-Succeeded for simulator build after the Phase 4 visual redesign.
+Succeeded for simulator build after Account Personalization Phase A.
 
 ## Last Test Result
 
-Succeeded after the Phase 4 visual redesign:
+Succeeded after Account Personalization Phase A:
 
 - `OccurrenceGeneratorTests`, `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests` (24 tests, no regressions).

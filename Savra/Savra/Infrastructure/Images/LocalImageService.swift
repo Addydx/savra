@@ -27,11 +27,18 @@ final class LocalImageService: ImageServiceProtocol {
     }
 
     func prepareImageData(_ data: Data, mealLogId: UUID) async throws -> PreparedMealImage {
+        try await prepareImage(data, filename: mealLogId.uuidString)
+    }
+
+    func prepareProfileImageData(_ data: Data, userId: UUID) async throws -> PreparedMealImage {
+        try await prepareImage(data, filename: "profile_\(userId.uuidString)")
+    }
+
+    private func prepareImage(_ data: Data, filename: String) async throws -> PreparedMealImage {
         guard let image = UIImage(data: data) else {
             throw ImageError.invalidData
         }
 
-        let filename = mealLogId.uuidString
         let fullURL = imagesDir.appendingPathComponent("\(filename).jpg")
         let thumbURL = imagesDir.appendingPathComponent("\(filename)_thumb.jpg")
 

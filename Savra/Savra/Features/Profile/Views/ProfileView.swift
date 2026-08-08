@@ -1,7 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct ProfileView: View {
     let container: AppViewModel
+    @State private var viewModel: ProfileViewModel?
     @State private var showSignOutAlert = false
 
     var body: some View {
@@ -9,12 +11,21 @@ struct ProfileView: View {
             List {
                 Section {
                     HStack(spacing: 16) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 48))
-                            .foregroundColor(.accentColor)
+                        if let path = viewModel?.photoThumbnailPath,
+                           let uiImage = UIImage(contentsOfFile: path) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 48, height: 48)
+                                .clipShape(Circle())
+                        } else {
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 48))
+                                .foregroundColor(.accentColor)
+                        }
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(container.userDisplayName)
+                            Text(viewModel?.displayName ?? container.userDisplayName)
                                 .font(.headline)
                             Text(container.userEmail)
                                 .font(.subheadline)
@@ -57,6 +68,17 @@ struct ProfileView: View {
                 }
             } message: {
                 Text("¿Estás seguro de que quieres cerrar sesión?")
+            }
+            .task {
+                if viewModel == nil {
+                    let vm = ProfileViewModel(
+                        container: container.container,
+                        userId: container.userId,
+                        initialDisplayName: container.userDisplayName
+                    )
+                    viewModel = vm
+                    await vm.loadProfile()
+                }
             }
         }
     }

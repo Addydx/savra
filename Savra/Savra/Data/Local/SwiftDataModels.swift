@@ -328,6 +328,53 @@ extension SDUnlockedAchievement {
 }
 
 @Model
+final class SDUserProfile {
+    @Attribute(.unique) var id: UUID
+    var userId: String
+    var displayName: String
+    var photoLocalPath: String?
+    var photoThumbnailPath: String?
+    var createdAt: Date
+    var updatedAt: Date
+
+    init(id: UUID = UUID(), userId: String, displayName: String, photoLocalPath: String? = nil, photoThumbnailPath: String? = nil, createdAt: Date = .now, updatedAt: Date = .now) {
+        self.id = id
+        self.userId = userId
+        self.displayName = displayName
+        self.photoLocalPath = photoLocalPath
+        self.photoThumbnailPath = photoThumbnailPath
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}
+
+extension SDUserProfile {
+    func toDomain() -> UserProfile {
+        UserProfile(
+            id: id,
+            userId: UUID(uuidString: userId) ?? UUID(),
+            displayName: displayName,
+            photoLocalPath: photoLocalPath,
+            photoThumbnailPath: photoThumbnailPath,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
+    }
+
+    static func fromDomain(_ profile: UserProfile) -> SDUserProfile {
+        SDUserProfile(
+            id: profile.id,
+            userId: profile.userId.uuidString,
+            displayName: profile.displayName,
+            photoLocalPath: profile.photoLocalPath,
+            photoThumbnailPath: profile.photoThumbnailPath,
+            createdAt: profile.createdAt,
+            updatedAt: profile.updatedAt
+        )
+    }
+}
+
+@Model
 final class SDFoodItem {
     @Attribute(.unique) var id: UUID
     var name: String
