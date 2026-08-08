@@ -16,4 +16,5 @@ protocol AuthServiceProtocol: Sendable {
     func sendEmailVerification() async throws
     func reloadUser() async throws -> AuthenticatedSession
     func resetPassword(email: String) async throws
+    func updateDisplayName(_ name: String) async throws
 }

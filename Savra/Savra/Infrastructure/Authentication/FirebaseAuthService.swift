@@ -128,6 +128,13 @@ final class FirebaseAuthService: AuthServiceProtocol {
     func resetPassword(email: String) async throws {
         try await auth.sendPasswordReset(withEmail: email)
     }
+
+    func updateDisplayName(_ name: String) async throws {
+        guard let user = auth.currentUser else { throw AuthError.userNotFound }
+        let changeRequest = user.createProfileChangeRequest()
+        changeRequest.displayName = name
+        try await changeRequest.commitChanges()
+    }
 }
 
 #else
@@ -153,6 +160,9 @@ final class FirebaseAuthService: AuthServiceProtocol {
         throw AuthError.firebaseNotAvailable
     }
     func resetPassword(email: String) async throws {
+        throw AuthError.firebaseNotAvailable
+    }
+    func updateDisplayName(_ name: String) async throws {
         throw AuthError.firebaseNotAvailable
     }
 }

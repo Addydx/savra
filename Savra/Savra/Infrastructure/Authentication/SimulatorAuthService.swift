@@ -79,4 +79,8 @@ final class SimulatorAuthService: AuthServiceProtocol {
     func resetPassword(email: String) async throws {
         // no-op in simulator
     }
+
+    func updateDisplayName(_ name: String) async throws {
+        defaults.set(name, forKey: nameKey)
+    }
 }

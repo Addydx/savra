@@ -1,28 +1,21 @@
 import SwiftUI
-import UIKit
 
 struct ProfileView: View {
     let container: AppViewModel
     @State private var viewModel: ProfileViewModel?
     @State private var showSignOutAlert = false
+    @State private var showEditProfile = false
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
                     HStack(spacing: 16) {
-                        if let path = viewModel?.photoThumbnailPath,
-                           let uiImage = UIImage(contentsOfFile: path) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 48, height: 48)
-                                .clipShape(Circle())
-                        } else {
-                            Image(systemName: "person.circle.fill")
-                                .font(.system(size: 48))
-                                .foregroundColor(.accentColor)
-                        }
+                        ProfileAvatarView(
+                            name: viewModel?.displayName ?? container.userDisplayName,
+                            photoPath: viewModel?.photoThumbnailPath,
+                            size: 48
+                        )
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(viewModel?.displayName ?? container.userDisplayName)
@@ -31,6 +24,11 @@ struct ProfileView: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
+
+                        Spacer()
+
+                        Button("Editar") { showEditProfile = true }
+                            .font(.subheadline)
                     }
                     .padding(.vertical, 8)
                 }
@@ -74,10 +72,16 @@ struct ProfileView: View {
                     let vm = ProfileViewModel(
                         container: container.container,
                         userId: container.userId,
-                        initialDisplayName: container.userDisplayName
+                        initialDisplayName: container.userDisplayName,
+                        appViewModel: container
                     )
                     viewModel = vm
                     await vm.loadProfile()
+                }
+            }
+            .sheet(isPresented: $showEditProfile) {
+                if let vm = viewModel {
+                    EditProfileView(viewModel: vm)
                 }
             }
         }

@@ -2,10 +2,16 @@
 
 ## Current Phase
 
-`PROMPT-claude-code-account-personalization.md` Phase A done; Phase B (edit name/photo) next.
+`PROMPT-claude-code-account-personalization.md` Phase B done; Phase C (change password/email) next.
 
 ## Completed
 
+- **Account Personalization — Phase B: edit name and photo**:
+  - Added `AuthServiceProtocol.updateDisplayName(_:)`, implemented in `FirebaseAuthService` (via `createProfileChangeRequest()`, same as `signUp`) and `SimulatorAuthService` (writes to the same `UserDefaults` key `currentUserName` reads).
+  - Added `ProfileViewModel.updateProfile(name:photoData:)`: calls `authService.updateDisplayName`, saves a new photo via `imageService.prepareProfileImageData` (Phase A) only when `photoData` is provided (keeps existing paths otherwise), upserts `UserProfileRepository`, and — since `ProfileViewModel` now takes an optional `appViewModel: AppViewModel` reference — writes straight to `AppViewModel.userDisplayName` so Dashboard/toolbar update without an app restart.
+  - Added `Features/Profile/Views/ProfileAvatarView.swift`, a small reusable component (photo if present, else initials-on-accent-circle fallback) shared by `ProfileView`'s header and the new `Features/Profile/Views/EditProfileView.swift` (tappable `PhotosPicker` avatar with a camera badge + name `TextField`), opened from an "Editar" button in `ProfileView`.
+  - Fixed a Swift concurrency warning introduced along the way: reading the `@MainActor`-isolated `viewModel.photoThumbnailPath` directly inside `PhotosPicker`'s label closure isn't isolated; hoisted it into a local `let` computed in `body` instead.
+  - Verified manually in the iOS Simulator: edited the name in `EditProfileView`, saved, watched `ProfileView`'s header update immediately (no restart), then force-quit and relaunched the app — the new name persisted from `SDUserProfile`.
 - **Account Personalization — Phase A: `ProfileViewModel` + profile persistence**:
   - Added `Domain/Models/UserProfile.swift` and `Domain/RepositoryProtocols/UserProfileRepository.swift` (`fetch(userId:)`, `upsert(_:)`).
   - Added `SDUserProfile` to `SwiftDataModels.swift` (`displayName`, `photoLocalPath`, `photoThumbnailPath`, timestamps) + `toDomain()`/`fromDomain()`, registered in `PersistenceService`'s `Schema([...])`.
@@ -70,7 +76,7 @@
 
 ## In Progress
 
-- `PROMPT-claude-code-account-personalization.md` Phase B — edit name/photo.
+- `PROMPT-claude-code-account-personalization.md` Phase C — change password/email.
 
 ## Pending
 
@@ -135,13 +141,18 @@
   - Result: succeeded (Account Personalization Phase A — `SDUserProfile`, `UserProfileRepository`, `ProfileViewModel`, generalized image service).
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, all 24 existing tests still pass (Phase A added persistence/DI plumbing, no domain logic changed, so no new tests needed).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded, no new warnings after fixing a Swift concurrency warning in `EditProfileView` (Account Personalization Phase B).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, all 24 existing tests still pass (Phase B).
+- Manual verification in the iOS Simulator (logged-in test account): edited display name via `EditProfileView`, saved, confirmed `ProfileView` updated immediately without a restart, then force-quit and relaunched the app and confirmed the new name persisted from `SDUserProfile`.
 
 ## Last Build Result
 
-Succeeded for simulator build after Account Personalization Phase A.
+Succeeded for simulator build after Account Personalization Phase B.
 
 ## Last Test Result
 
-Succeeded after Account Personalization Phase A:
+Succeeded after Account Personalization Phase B:
 
 - `OccurrenceGeneratorTests`, `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests` (24 tests, no regressions).
