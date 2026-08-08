@@ -66,6 +66,9 @@ struct MealLoggingFlowView: View {
                 }
             }
         }
+        .task {
+            await viewModel.loadAvailablePlans()
+        }
     }
 
     private var stepProgressBar: some View {
@@ -105,30 +108,61 @@ struct MealLoggingFlowView: View {
     }
 
     private var selectPlanView: some View {
-        VStack(spacing: 16) {
-            Text("¿A qué plan corresponde?")
-                .font(.headline)
-                .padding(.top)
+        ScrollView {
+            VStack(spacing: 16) {
+                Text("¿A qué plan corresponde?")
+                    .font(.headline)
+                    .padding(.top)
 
-            if let plan = viewModel.preSelectedPlan {
-                planButton(plan)
-            }
-
-            Button(action: { viewModel.skipPlan() }) {
-                HStack {
-                    Image(systemName: "plus.circle")
-                    Text("Comida libre (sin plan)")
+                if let plan = viewModel.preSelectedPlan {
+                    planButton(plan)
                 }
-                .font(.body)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
 
-            Spacer()
+                ForEach(otherAvailablePlans) { plan in
+                    planButton(plan)
+                }
+
+                if viewModel.availablePlans.isEmpty && viewModel.preSelectedPlan == nil {
+                    emptyPlansState
+                }
+
+                Button(action: { viewModel.skipPlan() }) {
+                    HStack {
+                        Image(systemName: "plus.circle")
+                        Text("Comida libre (sin plan)")
+                    }
+                    .font(.body)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .padding()
         }
+    }
+
+    private var otherAvailablePlans: [MealPlan] {
+        guard let preSelected = viewModel.preSelectedPlan else { return viewModel.availablePlans }
+        return viewModel.availablePlans.filter { $0.id != preSelected.id }
+    }
+
+    private var emptyPlansState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "calendar.badge.plus")
+                .font(.system(size: 32))
+                .foregroundColor(.secondary)
+            Text("Todavía no tienes planes creados")
+                .font(.subheadline.weight(.medium))
+            Text("Crea un plan desde la pestaña de planes para poder asociar tus comidas.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
         .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private func planButton(_ plan: MealPlan) -> some View {

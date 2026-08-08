@@ -4,28 +4,8 @@ import SwiftUI
 @MainActor
 @Observable
 final class ComplianceHeatmapViewModel {
-    enum Range: String, CaseIterable, Identifiable {
-        case threeMonths = "3 meses"
-        case sixMonths = "6 meses"
-        case oneYear = "1 año"
+    let rangeDays = 365
 
-        var id: String { rawValue }
-
-        var days: Int {
-            switch self {
-            case .threeMonths: return 90
-            case .sixMonths: return 182
-            case .oneYear: return 365
-            }
-        }
-    }
-
-    var range: Range = .threeMonths {
-        didSet {
-            guard oldValue != range else { return }
-            Task { await load() }
-        }
-    }
     var daySummaries: [Date: DailyComplianceSummary] = [:]
     var isLoading = false
 
@@ -46,7 +26,7 @@ final class ComplianceHeatmapViewModel {
 
         let calendar = Calendar.current
         let todayStart = calendar.startOfDay(for: Date())
-        guard let rangeStart = calendar.date(byAdding: .day, value: -(range.days - 1), to: todayStart) else {
+        guard let rangeStart = calendar.date(byAdding: .day, value: -(rangeDays - 1), to: todayStart) else {
             daySummaries = [:]
             return
         }

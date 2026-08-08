@@ -22,6 +22,7 @@ final class MealLoggingViewModel {
     var step: Step = .selectPlan
     var selectedPlan: MealPlan?
     var selectedOccurrence: MealOccurrence?
+    var availablePlans: [MealPlan] = []
     var eatenAt: Date
     var notes: String = ""
     var selectedFoods: [FoodItem] = []
@@ -67,6 +68,15 @@ final class MealLoggingViewModel {
                 eatenAt = calendar.date(from: comps) ?? Date()
             }
             step = .addPhoto
+        }
+    }
+
+    func loadAvailablePlans() async {
+        let userIdUUID = UUID(uuidString: userId) ?? UUID()
+        do {
+            availablePlans = try await container.mealPlanRepository.fetchActive(for: userIdUUID)
+        } catch {
+            availablePlans = []
         }
     }
 

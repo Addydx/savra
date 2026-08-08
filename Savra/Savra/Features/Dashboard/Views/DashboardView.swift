@@ -128,19 +128,12 @@ struct DashboardView: View {
                 Text("Constancia")
                     .font(.headline)
                 Spacer()
+                Text("Último año")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
 
             if let heatmapVM {
-                Picker("Rango", selection: Binding(
-                    get: { heatmapVM.range },
-                    set: { heatmapVM.range = $0 }
-                )) {
-                    ForEach(ComplianceHeatmapViewModel.Range.allCases) { range in
-                        Text(range.rawValue).tag(range)
-                    }
-                }
-                .pickerStyle(.segmented)
-
                 if heatmapVM.isLoading && heatmapVM.daySummaries.isEmpty {
                     ProgressView()
                         .frame(maxWidth: .infinity)
@@ -148,7 +141,7 @@ struct DashboardView: View {
                 } else {
                     ComplianceHeatmapView(
                         daySummaries: heatmapVM.daySummaries,
-                        rangeDays: heatmapVM.range.days
+                        rangeDays: heatmapVM.rangeDays
                     )
                 }
             } else {
