@@ -67,6 +67,16 @@ final class SwiftDataMealPlanRepository: @unchecked Sendable, MealPlanRepository
         }
     }
 
+    func deleteAll(for userId: UUID) async throws {
+        let uid = userId.uuidString
+        let predicate = #Predicate<SDMealPlan> { $0.userId == uid }
+        let descriptor = FetchDescriptor<SDMealPlan>(predicate: predicate)
+        for plan in try context.fetch(descriptor) {
+            context.delete(plan)
+        }
+        try context.save()
+    }
+
     func fetchAll(for userId: UUID) async throws -> [MealPlan] {
         let uid = userId.uuidString
         let predicate = #Predicate<SDMealPlan> { $0.userId == uid }

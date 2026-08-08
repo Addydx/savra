@@ -30,4 +30,13 @@ final class SwiftDataUserProfileRepository: @unchecked Sendable, UserProfileRepo
         }
         try context.save()
     }
+
+    func delete(userId: UUID) async throws {
+        let uid = userId.uuidString
+        let predicate = #Predicate<SDUserProfile> { $0.userId == uid }
+        let descriptor = FetchDescriptor<SDUserProfile>(predicate: predicate)
+        guard let existing = try context.fetch(descriptor).first else { return }
+        context.delete(existing)
+        try context.save()
+    }
 }

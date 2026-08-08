@@ -15,6 +15,7 @@ final class AppContainer {
     let preferencesStore: any PreferencesStore
     let themeSettings: ThemeSettings
     let evaluateAchievementsUseCase: EvaluateAchievementsUseCase
+    let deleteAccountUseCase: DeleteAccountUseCase
 
     init() {
         let persistence = PersistenceService.shared
@@ -40,6 +41,15 @@ final class AppContainer {
             mealOccurrenceRepository: mealOccurrenceRepository,
             mealLogRepository: mealLogRepository,
             achievementRepository: achievementRepository
+        )
+        self.deleteAccountUseCase = DeleteAccountUseCase(
+            mealPlanRepository: mealPlanRepository,
+            mealOccurrenceRepository: mealOccurrenceRepository,
+            mealLogRepository: mealLogRepository,
+            achievementRepository: achievementRepository,
+            userProfileRepository: userProfileRepository,
+            imageService: imageService,
+            authService: authService
         )
     }
 }

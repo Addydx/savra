@@ -2,10 +2,17 @@
 
 ## Current Phase
 
-`PROMPT-claude-code-account-personalization.md` Phase D done; Phase E (delete account, needs ADR-009 first) next.
+All 5 phases of `PROMPT-claude-code-account-personalization.md` are complete.
 
 ## Completed
 
+- **Account Personalization — Phase E: delete account**:
+  - Wrote `Documentation/ADR-009-account-deletion.md` first, documenting what gets deleted, in what order (local data — meal log photos/rows, occurrences, plans, achievements, profile+photo — before the Firebase Auth account), and why `requiresRecentLogin` is handled by reauthenticating once up front rather than a second time right before `deleteAccount()`.
+  - Added `AuthServiceProtocol.deleteAccount()`, implemented in `FirebaseAuthService` (`currentUser?.delete()`) and `SimulatorAuthService` (clears its `UserDefaults` session keys). Same `#if !targetEnvironment(simulator)` caveat as Phase C's real-branch code applies.
+  - Added `deleteAll(for userId:)` to `MealPlanRepository`, `MealOccurrenceRepository`, `MealLogRepository`, `AchievementRepository` (+ SwiftData implementations, each a predicate fetch + delete loop + single `context.save()`), and `delete(userId:)` to `UserProfileRepository`.
+  - Added `ImageServiceProtocol.deleteImage(at:)` (was already implemented on `LocalImageService`, just not declared on the protocol) so `Domain` code can depend on the abstraction instead of the concrete type.
+  - Added `Domain/UseCases/DeleteAccountUseCase.swift` (same protocol-only-dependency pattern as `EvaluateAchievementsUseCase`): reauthenticates, deletes meal-log photos from disk then the DB rows (SwiftData cascade handles `MealLogItem`/`SDMealLogPhoto`), then occurrences, plans, achievements, profile photo + row, and finally the Firebase Auth account. Injected into `AppContainer` as `deleteAccountUseCase`.
+  - Added `ProfileViewModel.deleteAccount(currentPassword:) -> Bool` and `Features/Profile/Views/DeleteAccountView.swift`: irreversibility warning, current-password field, and a "type ELIMINAR to confirm" field gating the destructive button. Opened from a new destructive "Eliminar cuenta" section at the bottom of `ProfileView`, below "Cerrar sesión". On success, calls `AppViewModel.signOut()`, which flips `authState` to `.signedOut` and lets `AppRootView` swap to the `Features/Authentication` flow on its own — no manual navigation needed.
 - **Account Personalization — Phase D: app preferences**:
   - Added `Domain/Models/AppPreferences.swift` (`theme: Theme` `system/light/dark`, `preferredUnit: String`, `defaultNotificationsEnabled: Bool`, plus a `.default`).
   - Added `Core/Preferences/PreferencesStore.swift` protocol (`load()`/`save(_:)`, synchronous — it's a thin `UserDefaults` wrapper, not a repository) and `Infrastructure/Preferences/UserDefaultsPreferencesStore.swift`, injected into `AppContainer`.
@@ -89,12 +96,11 @@
 
 ## In Progress
 
-- `PROMPT-claude-code-account-personalization.md` Phase E — delete account (ADR-009 to be written first).
+- None. Both prompts in `Documentation/` (`PROMPT-claude-code-meal-logging-streaks.md`, `PROMPT-claude-code-account-personalization.md`) are fully implemented.
 
 ## Pending
 
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
-- Account deletion strategy — Phase E of `PROMPT-claude-code-account-personalization.md` resolves this (ADR-009 to be written first).
 
 ## Manual Actions Required
 
@@ -106,7 +112,7 @@
 
 ## Pending Decisions
 
-- Account deletion implementation strategy remains deferred. Current direction is to evaluate an official Firebase-supported approach when the feature is scheduled.
+- None outstanding. Account deletion strategy was resolved in ADR-009 (`Documentation/ADR-009-account-deletion.md`).
 
 ## Verifications Performed
 
@@ -166,13 +172,17 @@
   - Result: succeeded, no new warnings (Account Personalization Phase D — `AppPreferences`, `PreferencesStore`/`ThemeSettings`, `PreferencesSectionView`, wiring into `MealLoggingViewModel`/`MealPlanFormView`).
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, all 24 existing tests still pass (Phase D).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded, no new warnings (Account Personalization Phase E — `DeleteAccountUseCase`, repo `deleteAll`/`delete(userId:)` methods, `DeleteAccountView`). Same `#if !targetEnvironment(simulator)` caveat as Phase C applies to `FirebaseAuthService.deleteAccount()`.
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, all 24 existing tests still pass (Phase E).
 
 ## Last Build Result
 
-Succeeded for simulator build after Account Personalization Phase D.
+Succeeded for simulator build after Account Personalization Phase E — all 5 phases of the account personalization prompt are now complete.
 
 ## Last Test Result
 
-Succeeded after Account Personalization Phase D:
+Succeeded after Account Personalization Phase E:
 
 - `OccurrenceGeneratorTests`, `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests` (24 tests, no regressions).

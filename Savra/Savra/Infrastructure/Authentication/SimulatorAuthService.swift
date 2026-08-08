@@ -96,4 +96,11 @@ final class SimulatorAuthService: AuthServiceProtocol {
     func updatePassword(_ newPassword: String) async throws {
         // No-op: the simulator's stand-in auth doesn't store a password.
     }
+
+    func deleteAccount() async throws {
+        defaults.removeObject(forKey: uidKey)
+        defaults.removeObject(forKey: emailKey)
+        defaults.removeObject(forKey: nameKey)
+        defaults.removeObject(forKey: verifiedKey)
+    }
 }

@@ -7,4 +7,5 @@ protocol MealLogRepository: Sendable {
     func fetch(for userId: User.ID, from startDate: Date, to endDate: Date) async throws -> [MealLog]
     func fetchAll(for userId: User.ID) async throws -> [(MealLog, [MealLogItem], MealPhoto?)]
     func fetchWithDetails(for userId: User.ID, from startDate: Date, to endDate: Date) async throws -> [(MealLog, [MealLogItem], MealPhoto?)]
+    func deleteAll(for userId: User.ID) async throws
 }

@@ -105,4 +105,14 @@ final class SwiftDataMealOccurrenceRepository: @unchecked Sendable, MealOccurren
             return new.toDomain()
         }
     }
+
+    func deleteAll(for userId: UUID) async throws {
+        let uid = userId.uuidString
+        let predicate = #Predicate<SDMealOccurrence> { $0.userId == uid }
+        let descriptor = FetchDescriptor<SDMealOccurrence>(predicate: predicate)
+        for occurrence in try context.fetch(descriptor) {
+            context.delete(occurrence)
+        }
+        try context.save()
+    }
 }

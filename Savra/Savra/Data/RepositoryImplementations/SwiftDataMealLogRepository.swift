@@ -83,4 +83,14 @@ final class SwiftDataMealLogRepository: @unchecked Sendable, MealLogRepository {
             .sorted { $0.eatenAt > $1.eatenAt }
             .map { $0.toDomain() }
     }
+
+    func deleteAll(for userId: UUID) async throws {
+        let uid = userId.uuidString
+        let predicate = #Predicate<SDMealLog> { $0.userId == uid }
+        let descriptor = FetchDescriptor<SDMealLog>(predicate: predicate)
+        for log in try context.fetch(descriptor) {
+            context.delete(log)
+        }
+        try context.save()
+    }
 }

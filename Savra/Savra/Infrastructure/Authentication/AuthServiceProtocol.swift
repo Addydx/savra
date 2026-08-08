@@ -20,4 +20,5 @@ protocol AuthServiceProtocol: Sendable {
     func reauthenticate(password: String) async throws
     func updateEmail(_ newEmail: String) async throws
     func updatePassword(_ newPassword: String) async throws
+    func deleteAccount() async throws
 }

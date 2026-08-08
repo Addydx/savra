@@ -145,4 +145,23 @@ final class ProfileViewModel {
         preferences.defaultNotificationsEnabled = enabled
         container.preferencesStore.save(preferences)
     }
+
+    @discardableResult
+    func deleteAccount(currentPassword: String) async -> Bool {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        let userIdUUID = UUID(uuidString: userId) ?? UUID()
+        do {
+            try await container.deleteAccountUseCase.execute(userId: userIdUUID, currentPassword: currentPassword)
+            return true
+        } catch let error as AuthError {
+            errorMessage = error.errorDescription
+            return false
+        } catch {
+            errorMessage = AuthError.from(error).errorDescription
+            return false
+        }
+    }
 }

@@ -6,4 +6,5 @@ protocol MealPlanRepository: Sendable {
     func delete(id: MealPlan.ID) async throws
     func fetchActive(for userId: User.ID) async throws -> [MealPlan]
     func fetchAll(for userId: User.ID) async throws -> [MealPlan]
+    func deleteAll(for userId: User.ID) async throws
 }

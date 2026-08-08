@@ -30,4 +30,14 @@ final class SwiftDataAchievementRepository: @unchecked Sendable, AchievementRepo
         try context.save()
         return new.toDomain()
     }
+
+    func deleteAll(for userId: UUID) async throws {
+        let uid = userId.uuidString
+        let predicate = #Predicate<SDUnlockedAchievement> { $0.userId == uid }
+        let descriptor = FetchDescriptor<SDUnlockedAchievement>(predicate: predicate)
+        for achievement in try context.fetch(descriptor) {
+            context.delete(achievement)
+        }
+        try context.save()
+    }
 }

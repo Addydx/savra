@@ -5,6 +5,7 @@ struct ProfileView: View {
     @State private var viewModel: ProfileViewModel?
     @State private var showSignOutAlert = false
     @State private var showEditProfile = false
+    @State private var showDeleteAccount = false
 
     var body: some View {
         NavigationStack {
@@ -62,6 +63,12 @@ struct ProfileView: View {
                         Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 }
+
+                Section {
+                    Button(role: .destructive, action: { showDeleteAccount = true }) {
+                        Label("Eliminar cuenta", systemImage: "trash")
+                    }
+                }
             }
             .navigationTitle("Perfil")
             .alert("Cerrar sesión", isPresented: $showSignOutAlert) {
@@ -87,6 +94,11 @@ struct ProfileView: View {
             .sheet(isPresented: $showEditProfile) {
                 if let vm = viewModel {
                     EditProfileView(viewModel: vm)
+                }
+            }
+            .sheet(isPresented: $showDeleteAccount) {
+                if let vm = viewModel {
+                    DeleteAccountView(viewModel: vm, appViewModel: container)
                 }
             }
         }

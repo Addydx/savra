@@ -154,6 +154,11 @@ final class FirebaseAuthService: AuthServiceProtocol {
         guard let user = auth.currentUser else { throw AuthError.userNotFound }
         try await user.updatePassword(to: newPassword)
     }
+
+    func deleteAccount() async throws {
+        guard let user = auth.currentUser else { throw AuthError.userNotFound }
+        try await user.delete()
+    }
 }
 
 #else
@@ -191,6 +196,9 @@ final class FirebaseAuthService: AuthServiceProtocol {
         throw AuthError.firebaseNotAvailable
     }
     func updatePassword(_ newPassword: String) async throws {
+        throw AuthError.firebaseNotAvailable
+    }
+    func deleteAccount() async throws {
         throw AuthError.firebaseNotAvailable
     }
 }
