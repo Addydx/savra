@@ -53,6 +53,7 @@ struct ProfileView: View {
                 }
 
                 if let vm = viewModel {
+                    PreferencesSectionView(viewModel: vm)
                     SecuritySectionView(viewModel: vm)
                 }
 

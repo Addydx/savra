@@ -12,6 +12,8 @@ final class AppContainer {
     let achievementRepository: SwiftDataAchievementRepository
     let userProfileRepository: SwiftDataUserProfileRepository
     let imageService: LocalImageService
+    let preferencesStore: any PreferencesStore
+    let themeSettings: ThemeSettings
     let evaluateAchievementsUseCase: EvaluateAchievementsUseCase
 
     init() {
@@ -30,6 +32,9 @@ final class AppContainer {
         self.achievementRepository = SwiftDataAchievementRepository(context: context)
         self.userProfileRepository = SwiftDataUserProfileRepository(context: context)
         self.imageService = LocalImageService()
+        let preferencesStore = UserDefaultsPreferencesStore()
+        self.preferencesStore = preferencesStore
+        self.themeSettings = ThemeSettings(theme: preferencesStore.load().theme)
         self.evaluateAchievementsUseCase = EvaluateAchievementsUseCase(
             mealPlanRepository: mealPlanRepository,
             mealOccurrenceRepository: mealOccurrenceRepository,

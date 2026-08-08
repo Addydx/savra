@@ -2,10 +2,17 @@
 
 ## Current Phase
 
-`PROMPT-claude-code-account-personalization.md` Phase C done; Phase D (app preferences) next.
+`PROMPT-claude-code-account-personalization.md` Phase D done; Phase E (delete account, needs ADR-009 first) next.
 
 ## Completed
 
+- **Account Personalization — Phase D: app preferences**:
+  - Added `Domain/Models/AppPreferences.swift` (`theme: Theme` `system/light/dark`, `preferredUnit: String`, `defaultNotificationsEnabled: Bool`, plus a `.default`).
+  - Added `Core/Preferences/PreferencesStore.swift` protocol (`load()`/`save(_:)`, synchronous — it's a thin `UserDefaults` wrapper, not a repository) and `Infrastructure/Preferences/UserDefaultsPreferencesStore.swift`, injected into `AppContainer`.
+  - Added `Core/Preferences/ThemeSettings.swift`, a tiny `@Observable` holder for the *live* theme (separate from the `AppPreferences` snapshot) so changing it in Settings updates the UI without a restart. `AppContainer` seeds it from `preferencesStore.load().theme` at launch; `AppRootView` applies `.preferredColorScheme(container.themeSettings.theme.colorScheme)` reading through the observable chain, and `ProfileViewModel.updateTheme(_:)` writes to both the store (persisted) and `themeSettings` (live UI).
+  - `ProfileViewModel` gained a `preferences: AppPreferences` snapshot loaded at init, plus `updateTheme`/`updatePreferredUnit`/`updateDefaultNotificationsEnabled`, each persisting immediately via `preferencesStore.save(_:)`.
+  - Added `Features/Profile/Views/PreferencesSectionView.swift`: a "Preferencias" `Section` in `ProfileView` (theme `Picker`, unit `Picker` reusing `MealLoggingViewModel.unitOptions` for consistency with the meal-logging unit picker, notifications `Toggle`).
+  - Wired the defaults through to where they're consumed per-instance: `MealLoggingViewModel`'s per-food `defaultUnit` now reads `preferencesStore.load().preferredUnit` at init (falling back to "porción" if the stored value isn't one of `unitOptions`) instead of a hardcoded constant. `MealPlanFormView` gained an actual `notificationsEnabled` `Toggle` (previously always hardcoded to `false` with no UI control at all) defaulting to `preferencesStore.load().defaultNotificationsEnabled` for new plans, `editPlan?.notificationsEnabled` when editing — both remain editable per-instance. `MealPlansViewModel.container` was made non-private so the form could reach the store.
 - **Account Personalization — Phase C: change password and email**:
   - Added `AuthServiceProtocol.reauthenticate(password:)`, `.updateEmail(_:)`, `.updatePassword(_:)`. `FirebaseAuthService` implements them with `EmailAuthProvider.credential(withEmail:password:)` + `user.reauthenticate(with:)`, then `user.updateEmail(to:)`/`updatePassword(to:)`. **Caveat**: like the rest of `FirebaseAuthService`'s real branch, this code lives behind `#if !targetEnvironment(simulator)` and is never compiled by the simulator build/test commands this project standardizes on — only `SimulatorAuthService`'s stubs are exercised by `xcodebuild ... -destination 'platform=iOS Simulator...'`. A `generic/platform=iOS` build (done once during Phase 0 setup) would be needed to type-check the real Firebase branch.
   - `SimulatorAuthService` gets coherent stand-ins: `reauthenticate` just rejects an empty password (there's no real password to check), `updateEmail` writes the `UserDefaults` email key, `updatePassword` is a no-op.
@@ -82,13 +89,12 @@
 
 ## In Progress
 
-- `PROMPT-claude-code-account-personalization.md` Phase D — app preferences.
+- `PROMPT-claude-code-account-personalization.md` Phase E — delete account (ADR-009 to be written first).
 
 ## Pending
 
 - Firestore business data access, collections, rules hardening, and sync behavior in later phases.
 - Account deletion strategy — Phase E of `PROMPT-claude-code-account-personalization.md` resolves this (ADR-009 to be written first).
-- `PROMPT-claude-code-account-personalization.md` Phases D (app preferences), E (delete account).
 
 ## Manual Actions Required
 
@@ -156,13 +162,17 @@
   - Result: succeeded, no new warnings (Account Personalization Phase C — reauthenticate/updateEmail/updatePassword, `SecuritySectionView`). Note: this build only compiles `SimulatorAuthService`'s stubs and `AuthServiceProtocol`/`AuthError` changes; `FirebaseAuthService`'s real branch is gated behind `#if !targetEnvironment(simulator)` and isn't exercised here.
 - `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
   - Result: succeeded, all 24 existing tests still pass (Phase C).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' build`
+  - Result: succeeded, no new warnings (Account Personalization Phase D — `AppPreferences`, `PreferencesStore`/`ThemeSettings`, `PreferencesSectionView`, wiring into `MealLoggingViewModel`/`MealPlanFormView`).
+- `xcodebuild -project Savra/Savra.xcodeproj -scheme Savra -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SavraTests test`
+  - Result: succeeded, all 24 existing tests still pass (Phase D).
 
 ## Last Build Result
 
-Succeeded for simulator build after Account Personalization Phase C.
+Succeeded for simulator build after Account Personalization Phase D.
 
 ## Last Test Result
 
-Succeeded after Account Personalization Phase C:
+Succeeded after Account Personalization Phase D:
 
 - `OccurrenceGeneratorTests`, `StreakCalculatorTests`, `DailyComplianceCalculatorTests`, `DomainValueObjectTests`, and `FirebaseBootstrapTests` all passed on `SavraTests` (24 tests, no regressions).

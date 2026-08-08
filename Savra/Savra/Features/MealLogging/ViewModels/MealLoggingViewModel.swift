@@ -17,7 +17,7 @@ final class MealLoggingViewModel {
     let preSelectedOccurrence: MealOccurrence?
 
     static let unitOptions = ["porción", "g", "ml", "taza", "cucharada", "unidad"]
-    private static let defaultUnit = "porción"
+    private let defaultUnit: String
 
     var step: Step = .selectPlan
     var selectedPlan: MealPlan?
@@ -53,6 +53,8 @@ final class MealLoggingViewModel {
         self.preSelectedPlan = preSelectedOccurrence?.plan
         self.preSelectedOccurrence = preSelectedOccurrence?.occurrence
         self.eatenAt = Date()
+        let preferredUnit = container.preferencesStore.load().preferredUnit
+        self.defaultUnit = Self.unitOptions.contains(preferredUnit) ? preferredUnit : "porción"
 
         if let occ = preSelectedOccurrence {
             selectedPlan = occ.plan
@@ -86,7 +88,7 @@ final class MealLoggingViewModel {
     func addFood(_ food: FoodItem) {
         if !selectedFoods.contains(where: { $0.id == food.id }) {
             selectedFoods.append(food)
-            foodQuantities[food.id] = SelectedFoodQuantity(quantity: 1, unit: Self.defaultUnit)
+            foodQuantities[food.id] = SelectedFoodQuantity(quantity: 1, unit: defaultUnit)
         }
     }
 
@@ -100,17 +102,17 @@ final class MealLoggingViewModel {
     }
 
     func unit(for food: FoodItem) -> String {
-        foodQuantities[food.id]?.unit ?? Self.defaultUnit
+        foodQuantities[food.id]?.unit ?? defaultUnit
     }
 
     func setQuantity(_ quantity: Double, for food: FoodItem) {
-        var entry = foodQuantities[food.id] ?? SelectedFoodQuantity(quantity: 1, unit: Self.defaultUnit)
+        var entry = foodQuantities[food.id] ?? SelectedFoodQuantity(quantity: 1, unit: defaultUnit)
         entry.quantity = max(0, quantity)
         foodQuantities[food.id] = entry
     }
 
     func setUnit(_ unit: String, for food: FoodItem) {
-        var entry = foodQuantities[food.id] ?? SelectedFoodQuantity(quantity: 1, unit: Self.defaultUnit)
+        var entry = foodQuantities[food.id] ?? SelectedFoodQuantity(quantity: 1, unit: defaultUnit)
         entry.unit = unit
         foodQuantities[food.id] = entry
     }

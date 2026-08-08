@@ -12,6 +12,7 @@ struct MealPlanFormView: View {
     @State private var minute: Int
     @State private var recurrenceKind: String
     @State private var selectedDays: Set<Int>
+    @State private var notificationsEnabled: Bool
     @State private var errorMessage: String?
 
     private let emojis = ["🍳", "🥗", "🌙", "🥪", "🍝", "🥣", "🍎", "☕", "🥤", "🍽️"]
@@ -35,6 +36,7 @@ struct MealPlanFormView: View {
         _selectedDays = State(initialValue: {
             Set(editPlan?.recurrenceRule.daysOfWeek?.map(\.rawValue) ?? [])
         }())
+        _notificationsEnabled = State(initialValue: editPlan?.notificationsEnabled ?? viewModel.container.preferencesStore.load().defaultNotificationsEnabled)
     }
 
     var body: some View {
@@ -70,6 +72,7 @@ struct MealPlanFormView: View {
                             }
                         ), displayedComponents: .hourAndMinute)
                     }
+                    Toggle("Notificaciones", isOn: $notificationsEnabled)
                 }
 
                 Section("Repetición") {
@@ -163,7 +166,7 @@ struct MealPlanFormView: View {
             scheduleKind: .routine,
             time: time,
             recurrenceRule: rule,
-            notificationsEnabled: false,
+            notificationsEnabled: notificationsEnabled,
             isActive: editPlan?.isActive ?? true,
             createdAt: editPlan?.createdAt ?? .now,
             updatedAt: .now

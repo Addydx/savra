@@ -9,6 +9,7 @@ final class ProfileViewModel {
     var isLoading = false
     var errorMessage: String?
     var successMessage: String?
+    var preferences: AppPreferences
 
     let container: AppContainer
     let userId: String
@@ -19,6 +20,7 @@ final class ProfileViewModel {
         self.userId = userId
         self.displayName = initialDisplayName
         self.appViewModel = appViewModel
+        self.preferences = container.preferencesStore.load()
     }
 
     func loadProfile() async {
@@ -126,5 +128,21 @@ final class ProfileViewModel {
         } catch {
             errorMessage = AuthError.from(error).errorDescription
         }
+    }
+
+    func updateTheme(_ theme: AppPreferences.Theme) {
+        preferences.theme = theme
+        container.preferencesStore.save(preferences)
+        container.themeSettings.theme = theme
+    }
+
+    func updatePreferredUnit(_ unit: String) {
+        preferences.preferredUnit = unit
+        container.preferencesStore.save(preferences)
+    }
+
+    func updateDefaultNotificationsEnabled(_ enabled: Bool) {
+        preferences.defaultNotificationsEnabled = enabled
+        container.preferencesStore.save(preferences)
     }
 }

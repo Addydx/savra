@@ -9,7 +9,7 @@ final class MealPlansViewModel {
     var showForm = false
     var editingPlan: MealPlan?
 
-    private let container: AppContainer
+    let container: AppContainer
     let userId: String
 
     init(container: AppContainer, userId: String) {
